@@ -17,10 +17,27 @@ cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build build-release --target cholesky_all_variants
 ```
 
-Submit one chosen milestone on CSD3 with the convenience shell wrapper:
+Validate or submit a single milestone from the login node with the convenience shell wrappers:
 
 ```bash
+CSD3_ACCOUNT=<account> ./scripts/csd3/v0.sh
+CSD3_ACCOUNT=<account> ./scripts/csd3/v1.sh
+CSD3_ACCOUNT=<account> ./scripts/csd3/v2.sh
+CSD3_ACCOUNT=<account> ./scripts/csd3/v3.sh
 CSD3_ACCOUNT=<account> ./scripts/csd3/v4.sh
+```
+
+The same shell wrappers also support local/login-node validation before submission:
+
+```bash
+CSD3_ACCOUNT=<account> ./scripts/csd3/v0.sh --dry-run
+CSD3_ACCOUNT=<account> ./scripts/csd3/v4.sh --dry-run
+```
+
+Submit the example program on CSD3:
+
+```bash
+CSD3_ACCOUNT=<account> ./scripts/csd3/example.sh
 ```
 
 Submit all milestone versions plus the current final version on CSD3:
@@ -29,14 +46,21 @@ Submit all milestone versions plus the current final version on CSD3:
 CSD3_ACCOUNT=<account> ./scripts/csd3/run_all_versions.sh
 ```
 
-Direct `sbatch` entrypoints are also provided:
+Direct `sbatch` entrypoints are also provided for each milestone and the all-version workflow:
 
 ```bash
+sbatch -A <account> scripts/csd3/v0.slurm
+sbatch -A <account> scripts/csd3/v1.slurm
+sbatch -A <account> scripts/csd3/v2.slurm
+sbatch -A <account> scripts/csd3/v3.slurm
 sbatch -A <account> scripts/csd3/v4.slurm
+sbatch -A <account> scripts/csd3/example.slurm
 sbatch -A <account> scripts/csd3/run_all_versions.slurm
 ```
 
 The CSD3 wrappers submit to `icelake` by default, run on one exclusive node, and map directly onto the repository’s existing release workflow in `scripts/run_release_suite.sh` and `scripts/run_release_all_versions.sh`.
+
+All tracked milestone source snapshots and benchmark bundles live under `history/`, so a marker can inspect both the archived code and the recorded results without checking out extra branches.
 
 ## Version Milestones / Tag Mapping
 
@@ -55,6 +79,7 @@ The CSD3 wrappers submit to `icelake` by default, run on one exclusive node, and
 - `example/`: minimal example program using the public API.
 - `test/`: correctness, regression, stability, OpenMP consistency, and external-reference validation tools.
 - `bench/`: benchmark drivers plus one-line wrappers for single-version and all-version reruns.
+- `perf_analysis/`: Python-based post-processing scripts, generated figures, and analysis tables for the report.
 - `scripts/`: release wrappers, CSD3 submission scripts, and reporting helpers.
 - `scripts/csd3/`: submission-ready `.slurm` and `.sh` entrypoints for CSD3.
 - `history/versions/`: archived source snapshots for milestone versions.
@@ -105,7 +130,7 @@ Useful direct executables after building:
 
 The repository now includes two kinds of CSD3 entrypoints:
 
-- `.sh` wrappers: convenient login-node submission helpers that call `sbatch` for you.
+- `.sh` wrappers: convenient login-node helpers that can be used either as a local validation path with `--dry-run` or as a submission helper that calls `sbatch` for you.
 - `.slurm` scripts: direct batch scripts for use with `sbatch`.
 
 Default assumptions in the CSD3 scripts:
@@ -136,15 +161,23 @@ CHOLESKY_OMP_CHUNK=1 \
 ./scripts/csd3/v4.sh
 ```
 
+For a marker or user who wants to sanity-check the submission path without queueing a job immediately, the intended order is:
+
+```bash
+CSD3_ACCOUNT=<account> ./scripts/csd3/v2.sh --dry-run
+sbatch -A <account> scripts/csd3/v2.slurm
+```
+
 Available CSD3 convenience wrappers:
 
-- `scripts/csd3/v0.sh`, `scripts/csd3/v0.slurm`
-- `scripts/csd3/v1.sh`, `scripts/csd3/v1.slurm`
-- `scripts/csd3/v2.sh`, `scripts/csd3/v2.slurm`
-- `scripts/csd3/v3.sh`, `scripts/csd3/v3.slurm`
-- `scripts/csd3/v4.sh`, `scripts/csd3/v4.slurm`
-- `scripts/csd3/run_version.sh`, `scripts/csd3/run_version.slurm`
-- `scripts/csd3/run_all_versions.sh`, `scripts/csd3/run_all_versions.slurm`
+- `scripts/csd3/v0.sh`, `scripts/csd3/v0.slurm`: run the `v0` baseline milestone.
+- `scripts/csd3/v1.sh`, `scripts/csd3/v1.slurm`: run the `v1` serial-optimized milestone.
+- `scripts/csd3/v2.sh`, `scripts/csd3/v2.slurm`: run the `v2` blocked-serial milestone.
+- `scripts/csd3/v3.sh`, `scripts/csd3/v3.slurm`: run the `v3` first-OpenMP milestone.
+- `scripts/csd3/v4.sh`, `scripts/csd3/v4.slurm`: run the `v4` tuned parallel milestone.
+- `scripts/csd3/example.sh`, `scripts/csd3/example.slurm`: build and run `cholesky_example` only.
+- `scripts/csd3/run_version.sh`, `scripts/csd3/run_version.slurm`: generic single-version entrypoints.
+- `scripts/csd3/run_all_versions.sh`, `scripts/csd3/run_all_versions.slurm`: rerun all milestone versions plus the final submission state.
 
 For CSD3 submission wrappers, the current final version uses:
 
@@ -153,11 +186,28 @@ For CSD3 submission wrappers, the current final version uses:
 
 Archived milestones are rerun from `history/versions/<tag>/` through dedicated CMake targets in the current repository, so markers do not need to check out old tags manually.
 
+Recommended CSD3 flow:
+
+1. Log in to CSD3 and clone the repository.
+2. Use a convenience `.sh` wrapper on the login node when you want the repository to prepare the matching `sbatch` command for you.
+3. Use the matching `.slurm` file directly when you want an explicit batch script for a milestone or for the example program.
+4. Use `scripts/csd3/run_all_versions.sh` or `scripts/csd3/run_all_versions.slurm` when you want the complete milestone rerun workflow.
+5. Inspect outputs in `history/results/<version>/` after the job completes.
+
+If you want to inspect the code differences between two milestone tags directly, use `git diff`. For example, the serial blocking change introduced in `v2` can be viewed with:
+
+```bash
+git diff cholesky_v1_serial_opt cholesky_v2_serial_blocked -- src/cholesky.cpp
+```
+
 ## Results and Report Locations
 
 - Canonical benchmark bundles live in `history/results/<version>/`.
 - Milestone source snapshots live in `history/versions/<version>/`.
-- The final report should live at `report/report.pdf`.
+- Python analysis scripts and generated performance figures live in `perf_analysis/`.
+- The final report should be placed at `report/report.pdf` before submission.
+- In other words, the coursework-facing deliverables are intentionally concentrated under `history/` for code/results and under `report/` for the written report.
+- The `main` branch should be treated as the final submission branch.
 
 Typical result bundles contain:
 

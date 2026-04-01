@@ -1,0 +1,601 @@
+\section{Code evolution across milestone versions}
+
+% Requires in the main preamble:
+% \usepackage{listings}
+% \usepackage{xcolor}
+%
+% If not already defined in the report preamble, the following style block can
+% remain here safely.
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{220,220,220}
+\definecolor{codecomment}{RGB}{76,114,176}
+\definecolor{codekeyword}{RGB}{180,60,40}
+\definecolor{codestring}{RGB}{34,139,34}
+
+\lstdefinestyle{appendixcode}{
+  language=C++,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{codekeyword}\bfseries,
+  commentstyle=\color{codecomment},
+  stringstyle=\color{codestring},
+  numbers=left,
+  numberstyle=\tiny,
+  stepnumber=1,
+  numbersep=8pt,
+  showstringspaces=false,
+  tabsize=4,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  rulecolor=\color{codeframe},
+  backgroundcolor=\color{codebg},
+  xleftmargin=1.2em,
+  framexleftmargin=1.0em,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  captionpos=b
+}
+
+This appendix presents the Cholesky implementation for each milestone version using the archived source snapshots stored in the repository. For v0--v3 the listings are taken from \texttt{history/versions/<tag>/src/cholesky.cpp}, while the v4 listing is taken from the current \texttt{src/cholesky.cpp}. For the OpenMP versions, short appendix-only explanatory comments are inserted around OpenMP-specific lines to make the parallel intent clear without rewriting project history.
+
+\subsection{v0: Baseline serial kernel}
+
+Tag: \texttt{cholesky\_v0\_baseline}.
+
+This version is a direct serial implementation of the coursework baseline algorithm. It serves as the initial correctness and timing reference before any restructuring or parallelisation.
+
+\begin{lstlisting}[style=appendixcode]
+#include "mphil_dis_cholesky.h"
+
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+
+double cholesky(double* c, int n) {
+    if (c == nullptr || n < 0 || n > 100000) {
+        return -1.0;
+    }
+
+    const std::size_t stride = static_cast<std::size_t>(n);
+    const auto start = std::chrono::steady_clock::now();
+
+    for (int p = 0; p < n; ++p) {
+        const std::size_t p_index = static_cast<std::size_t>(p);
+        const std::size_t diag_offset = p_index * stride + p_index;
+        const double diag_entry = c[diag_offset];
+
+        if (diag_entry <= 0.0) {
+            return -1.0;
+        }
+
+        const double diag = std::sqrt(diag_entry);
+        c[diag_offset] = diag;
+
+        for (int j = p + 1; j < n; ++j) {
+            const std::size_t j_offset = static_cast<std::size_t>(j);
+            c[p_index * stride + j_offset] /= diag;
+        }
+
+        for (int i = p + 1; i < n; ++i) {
+            const std::size_t i_offset = static_cast<std::size_t>(i);
+            c[i_offset * stride + p_index] /= diag;
+        }
+
+        for (int j = p + 1; j < n; ++j) {
+            const std::size_t j_offset = static_cast<std::size_t>(j);
+            const double row_value = c[p_index * stride + j_offset];
+
+            for (int i = p + 1; i < n; ++i) {
+                const std::size_t i_offset = static_cast<std::size_t>(i);
+                c[i_offset * stride + j_offset] -= c[i_offset * stride + p_index] * row_value;
+            }
+        }
+    }
+
+    const auto end = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> elapsed = end - start;
+    return elapsed.count();
+}
+\end{lstlisting}
+
+\subsection{v1: Serial kernel clean-up}
+
+Tag: \texttt{cholesky\_v1\_serial\_opt}.
+
+This version keeps the same mathematical algorithm as v0, but reduces loop overhead, reuses row pointers, and replaces repeated division with multiplication by a precomputed reciprocal.
+
+\begin{lstlisting}[style=appendixcode]
+#include "mphil_dis_cholesky.h"
+
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+
+double cholesky(double* c, int n) {
+    if (c == nullptr || n < 0 || n > 100000) {
+        return -1.0;
+    }
+
+    const std::size_t stride = static_cast<std::size_t>(n);
+    const auto start = std::chrono::steady_clock::now();
+
+    for (int p = 0; p < n; ++p) {
+        const std::size_t p_index = static_cast<std::size_t>(p);
+        const std::size_t diag_offset = p_index * stride + p_index;
+        double* const row_p = c + p_index * stride;
+        const double diag_entry = c[diag_offset];
+
+        if (diag_entry <= 0.0) {
+            return -1.0;
+        }
+
+        const double diag = std::sqrt(diag_entry);
+        const double inv_diag = 1.0 / diag;
+        c[diag_offset] = diag;
+
+        for (int j = p + 1; j < n; ++j) {
+            const std::size_t j_offset = static_cast<std::size_t>(j);
+            row_p[j_offset] *= inv_diag;
+        }
+
+        for (int i = p + 1; i < n; ++i) {
+            const std::size_t i_offset = static_cast<std::size_t>(i);
+            c[i_offset * stride + p_index] *= inv_diag;
+        }
+
+        for (int i = p + 1; i < n; ++i) {
+            const std::size_t i_offset = static_cast<std::size_t>(i);
+            double* const row_i = c + i_offset * stride;
+            const double col_value = row_i[p_index];
+
+            for (int j = p + 1; j < n; ++j) {
+                const std::size_t j_offset = static_cast<std::size_t>(j);
+                row_i[j_offset] -= col_value * row_p[j_offset];
+            }
+        }
+    }
+
+    const auto end = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> elapsed = end - start;
+    return elapsed.count();
+}
+\end{lstlisting}
+
+\subsection{v2: Blocked serial formulation}
+
+Tag: \texttt{cholesky\_v2\_serial\_blocked}.
+
+This version introduces panel factorisation, block-column solve, and tiled trailing-matrix updates. The purpose is to improve locality while remaining fully serial.
+
+\begin{lstlisting}[style=appendixcode]
+#include "mphil_dis_cholesky.h"
+
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <algorithm>
+#include <cstdlib>
+
+namespace {
+
+int resolve_block_size() {
+    constexpr int default_block_size = 32;
+    const char* value = std::getenv("CHOLESKY_BLOCK_SIZE");
+    if (value == nullptr) {
+        return default_block_size;
+    }
+
+    const int parsed = std::atoi(value);
+    return parsed > 0 ? parsed : default_block_size;
+}
+
+}  // namespace
+
+double cholesky(double* c, int n) {
+    if (c == nullptr || n < 0 || n > 100000) {
+        return -1.0;
+    }
+
+    const std::size_t stride = static_cast<std::size_t>(n);
+    const auto start = std::chrono::steady_clock::now();
+    const int panel_block_size = resolve_block_size();
+    const int trailing_block_size = panel_block_size;
+
+    auto at = [c, stride](int row, int col) -> double& {
+        return c[static_cast<std::size_t>(row) * stride + static_cast<std::size_t>(col)];
+    };
+
+    for (int block_start = 0; block_start < n; block_start += panel_block_size) {
+        const int block_end = std::min(block_start + panel_block_size, n);
+
+        // Factor the diagonal panel one column at a time while keeping it mirrored.
+        for (int p = block_start; p < block_end; ++p) {
+            const double diag_entry = at(p, p);
+            if (diag_entry <= 0.0) {
+                return -1.0;
+            }
+
+            const double diag = std::sqrt(diag_entry);
+            const double inv_diag = 1.0 / diag;
+            at(p, p) = diag;
+
+            for (int i = p + 1; i < block_end; ++i) {
+                const double value = at(i, p) * inv_diag;
+                at(i, p) = value;
+                at(p, i) = value;
+            }
+
+            for (int j = p + 1; j < block_end; ++j) {
+                const double panel_value = at(j, p);
+                for (int i = j; i < block_end; ++i) {
+                    const double updated = at(i, j) - at(i, p) * panel_value;
+                    at(i, j) = updated;
+                    if (i != j) {
+                        at(j, i) = updated;
+                    }
+                }
+            }
+        }
+
+        // Solve the block column below the panel using the newly factorized block.
+        for (int i = block_end; i < n; ++i) {
+            for (int j = block_start; j < block_end; ++j) {
+                double value = at(i, j);
+                for (int p = block_start; p < j; ++p) {
+                    value -= at(i, p) * at(j, p);
+                }
+                value /= at(j, j);
+                at(i, j) = value;
+                at(j, i) = value;
+            }
+        }
+
+        // Update the trailing matrix with blocked rank-k style tiles.
+        for (int i_block = block_end; i_block < n; i_block += trailing_block_size) {
+            const int i_end = std::min(i_block + trailing_block_size, n);
+
+            for (int j_block = block_end; j_block <= i_block; j_block += trailing_block_size) {
+                const int j_end = std::min(j_block + trailing_block_size, n);
+
+                for (int i = i_block; i < i_end; ++i) {
+                    const int j_limit = std::min(j_end, i + 1);
+                    for (int j = j_block; j < j_limit; ++j) {
+                        double value = at(i, j);
+                        for (int p = block_start; p < block_end; ++p) {
+                            value -= at(i, p) * at(j, p);
+                        }
+                        at(i, j) = value;
+                        if (i != j) {
+                            at(j, i) = value;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const auto end = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> elapsed = end - start;
+    return elapsed.count();
+}
+\end{lstlisting}
+
+\subsection{v3: First OpenMP version}
+
+Tag: \texttt{cholesky\_v3\_openmp}.
+
+This version keeps the blocked structure of v2 and introduces OpenMP in the trailing update. That region is the natural first parallel hotspot because tiles are independent for a fixed panel.
+
+\begin{lstlisting}[style=appendixcode]
+#include "mphil_dis_cholesky.h"
+
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <algorithm>
+#include <cstdlib>
+#include <omp.h>  // OpenMP is used for the first parallel version in the trailing-update hotspot.
+
+namespace {
+
+int resolve_block_size() {
+    constexpr int default_block_size = 32;
+    const char* value = std::getenv("CHOLESKY_BLOCK_SIZE");
+    if (value == nullptr) {
+        return default_block_size;
+    }
+
+    const int parsed = std::atoi(value);
+    return parsed > 0 ? parsed : default_block_size;
+}
+
+}  // namespace
+
+double cholesky(double* c, int n) {
+    if (c == nullptr || n < 0 || n > 100000) {
+        return -1.0;
+    }
+
+    const std::size_t stride = static_cast<std::size_t>(n);
+    const auto start = std::chrono::steady_clock::now();
+    const int panel_block_size = resolve_block_size();
+    const int trailing_block_size = panel_block_size;
+
+    auto at = [c, stride](int row, int col) -> double& {
+        return c[static_cast<std::size_t>(row) * stride + static_cast<std::size_t>(col)];
+    };
+
+    for (int block_start = 0; block_start < n; block_start += panel_block_size) {
+        const int block_end = std::min(block_start + panel_block_size, n);
+
+        // Factor the diagonal panel one column at a time while keeping it mirrored.
+        for (int p = block_start; p < block_end; ++p) {
+            const double diag_entry = at(p, p);
+            if (diag_entry <= 0.0) {
+                return -1.0;
+            }
+
+            const double diag = std::sqrt(diag_entry);
+            const double inv_diag = 1.0 / diag;
+            at(p, p) = diag;
+
+            for (int i = p + 1; i < block_end; ++i) {
+                const double value = at(i, p) * inv_diag;
+                at(i, p) = value;
+                at(p, i) = value;
+            }
+
+            for (int j = p + 1; j < block_end; ++j) {
+                const double panel_value = at(j, p);
+                for (int i = j; i < block_end; ++i) {
+                    const double updated = at(i, j) - at(i, p) * panel_value;
+                    at(i, j) = updated;
+                    if (i != j) {
+                        at(j, i) = updated;
+                    }
+                }
+            }
+        }
+
+        // Solve the block column below the panel using the newly factorized block.
+        for (int i = block_end; i < n; ++i) {
+            for (int j = block_start; j < block_end; ++j) {
+                double value = at(i, j);
+                for (int p = block_start; p < j; ++p) {
+                    value -= at(i, p) * at(j, p);
+                }
+                value /= at(j, j);
+                at(i, j) = value;
+                at(j, i) = value;
+            }
+        }
+
+        // Update the trailing matrix with blocked rank-k style tiles.
+        // OpenMP is introduced here first because these trailing tiles are independent for a fixed panel and dominate the runtime.
+// Appendix note: This OpenMP parallel-for distributes independent work across threads in the main parallel region.
+#pragma omp parallel for schedule(static) if (n - block_end > trailing_block_size)
+        for (int i_block = block_end; i_block < n; i_block += trailing_block_size) {
+            const int i_end = std::min(i_block + trailing_block_size, n);
+
+            for (int j_block = block_end; j_block <= i_block; j_block += trailing_block_size) {
+                const int j_end = std::min(j_block + trailing_block_size, n);
+
+                for (int i = i_block; i < i_end; ++i) {
+                    const int j_limit = std::min(j_end, i + 1);
+                    for (int j = j_block; j < j_limit; ++j) {
+                        double value = at(i, j);
+                        for (int p = block_start; p < block_end; ++p) {
+                            value -= at(i, p) * at(j, p);
+                        }
+                        at(i, j) = value;
+                        if (i != j) {
+                            at(j, i) = value;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const auto end = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> elapsed = end - start;
+    return elapsed.count();
+}
+\end{lstlisting}
+
+\subsection{v4: Final tuned OpenMP kernel}
+
+Tag: \texttt{cholesky\_v4\_parallel\_opt}.
+
+This is the final accepted implementation. It extends the OpenMP version with runtime-configurable scheduling, parallel block-column solve, and SIMD-assisted inner kernels.
+
+\begin{lstlisting}[style=appendixcode]
+#include "mphil_dis_cholesky.h"
+
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <omp.h>  // OpenMP drives the tuned parallel trailing-update kernel.
+#include <string>
+
+namespace {
+
+// Reads a positive integer override from the environment and falls back to a
+// known-safe default when the variable is unset or invalid.
+int resolve_positive_env_or_default(const char* name, int default_value) {
+    const char* value = std::getenv(name);
+    if (value == nullptr) {
+        return default_value;
+    }
+
+    const int parsed = std::atoi(value);
+    return parsed > 0 ? parsed : default_value;
+}
+
+// Returns the blocked-kernel tile size used by the current implementation.
+int resolve_block_size() {
+    return resolve_positive_env_or_default("CHOLESKY_BLOCK_SIZE", 32);
+}
+
+// Stores the OpenMP runtime schedule policy selected for the current run.
+// Appendix note: This helper stores the runtime OpenMP schedule policy and chunk size used by the tuned final kernel.
+struct OpenMPScheduleConfig {
+// Appendix note: The schedule kind is kept explicit so the benchmarking workflow can compare static, dynamic, and guided policies.
+    omp_sched_t kind = omp_sched_guided;
+    int chunk = 1;
+};
+
+// Resolves the OpenMP runtime schedule configuration used by the v4 kernel.
+OpenMPScheduleConfig resolve_openmp_schedule() {
+    OpenMPScheduleConfig config;
+
+    if (const char* schedule_value = std::getenv("CHOLESKY_OMP_SCHEDULE")) {
+        const std::string schedule(schedule_value);
+        if (schedule == "dynamic") {
+            config.kind = omp_sched_dynamic;
+        } else if (schedule == "guided") {
+            config.kind = omp_sched_guided;
+        } else if (schedule == "auto") {
+            config.kind = omp_sched_auto;
+        } else {
+            config.kind = omp_sched_static;
+        }
+    }
+
+    if (const char* chunk_value = std::getenv("CHOLESKY_OMP_CHUNK")) {
+        const int parsed_chunk = std::atoi(chunk_value);
+        if (parsed_chunk > 0) {
+            config.chunk = parsed_chunk;
+        }
+    }
+
+    return config;
+}
+
+}  // namespace
+
+// Computes an in-place Cholesky factorization of a symmetric positive-definite
+// row-major matrix and returns the elapsed wall-clock time in seconds.
+double cholesky(double* c, int n) {
+    if (c == nullptr || n < 0 || n > 100000) {
+        return -1.0;
+    }
+
+    const std::size_t stride = static_cast<std::size_t>(n);
+    const int block_size = resolve_block_size();
+    const OpenMPScheduleConfig openmp_schedule = resolve_openmp_schedule();
+
+    // Apply the runtime schedule selected for the current run.
+// Appendix note: The OpenMP runtime is configured here so benchmark runs can tune schedule policy without recompiling.
+    omp_set_schedule(openmp_schedule.kind, openmp_schedule.chunk);
+
+    auto row_ptr = [c, stride](int row) -> double* {
+        return c + static_cast<std::size_t>(row) * stride;
+    };
+
+    const auto start = std::chrono::steady_clock::now();
+
+    for (int block_start = 0; block_start < n; block_start += block_size) {
+        const int block_end = std::min(block_start + block_size, n);
+
+        // Factor the diagonal panel and preserve the mirrored upper triangle.
+        for (int p = block_start; p < block_end; ++p) {
+            double* const row_p = row_ptr(p);
+            const double diag_entry = row_p[p];
+            if (diag_entry <= 0.0) {
+                return -1.0;
+            }
+
+            const double diag = std::sqrt(diag_entry);
+            const double inv_diag = 1.0 / diag;
+            row_p[p] = diag;
+
+            for (int i = p + 1; i < block_end; ++i) {
+                double* const row_i = row_ptr(i);
+                row_i[p] *= inv_diag;
+                row_p[i] = row_i[p];
+            }
+
+            for (int j = p + 1; j < block_end; ++j) {
+                double* const row_j = row_ptr(j);
+                const double panel_value = row_j[p];
+
+                for (int i = j; i < block_end; ++i) {
+                    double* const row_i = row_ptr(i);
+                    const double updated = row_i[j] - row_i[p] * panel_value;
+                    row_i[j] = updated;
+                    if (i != j) {
+                        row_j[i] = updated;
+                    }
+                }
+            }
+        }
+
+        // Rows below the panel are independent once the panel is factored.
+        // Parallelize over rows to solve the block column.
+// Appendix note: This OpenMP parallel-for distributes independent work across threads in the main parallel region.
+#pragma omp parallel for schedule(runtime) if (n - block_end > block_size)
+        for (int i = block_end; i < n; ++i) {
+            double* const row_i = row_ptr(i);
+
+            for (int j = block_start; j < block_end; ++j) {
+                double* const row_j = row_ptr(j);
+                double dot = 0.0;
+
+                // Vectorize the panel dot product reduction.
+// Appendix note: This OpenMP SIMD reduction asks the compiler to vectorise the inner dot product safely.
+ #pragma omp simd reduction(+:dot)
+                for (int p = block_start; p < j; ++p) {
+                    dot += row_i[p] * row_j[p];
+                }
+
+                row_i[j] = (row_i[j] - dot) / row_j[j];
+                row_j[i] = row_i[j];
+            }
+        }
+
+        // Each outer tile owns disjoint lower-triangular rows in the trailing matrix.
+        // Parallelize over those tiles in the main OpenMP hotspot.
+// Appendix note: This OpenMP parallel-for distributes independent work across threads in the main parallel region.
+#pragma omp parallel for schedule(runtime) if (n - block_end > block_size)
+        for (int i_block = block_end; i_block < n; i_block += block_size) {
+            const int i_end = std::min(i_block + block_size, n);
+
+            for (int j_block = block_end; j_block <= i_block; j_block += block_size) {
+                const int j_end = std::min(j_block + block_size, n);
+
+                for (int i = i_block; i < i_end; ++i) {
+                    double* const row_i = row_ptr(i);
+                    const int j_limit = std::min(j_end, i + 1);
+
+                    for (int j = j_block; j < j_limit; ++j) {
+                        double* const row_j = row_ptr(j);
+                        double dot = 0.0;
+
+                        // Vectorize the rank-k accumulation inside each tile.
+// Appendix note: This OpenMP SIMD reduction asks the compiler to vectorise the inner dot product safely.
+ #pragma omp simd reduction(+:dot)
+                        for (int p = block_start; p < block_end; ++p) {
+                            dot += row_i[p] * row_j[p];
+                        }
+
+                        row_i[j] -= dot;
+                        if (i != j) {
+                            row_j[i] = row_i[j];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const auto end = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> elapsed = end - start;
+    return elapsed.count();
+}
+\end{lstlisting}
+

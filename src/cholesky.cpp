@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <omp.h>  // OpenMP is used for the first parallel version in the trailing-update hotspot.
+#include <omp.h>  // OpenMP drives the tuned parallel trailing-update kernel.
 #include <string>
 
 namespace {
@@ -73,7 +73,7 @@ double cholesky(double* c, int n) {
     const int block_size = resolve_block_size();
     const OpenMPScheduleConfig openmp_schedule = resolve_openmp_schedule();
 
-    // Program the OpenMP runtime from the tuned default schedule, while still allowing the v4 workflow to override policy through the environment.
+    // Apply the runtime schedule selected for the current run.
     omp_set_schedule(openmp_schedule.kind, openmp_schedule.chunk);
 
     auto row_ptr = [c, stride](int row) -> double* {
@@ -85,7 +85,7 @@ double cholesky(double* c, int n) {
     for (int block_start = 0; block_start < n; block_start += block_size) {
         const int block_end = std::min(block_start + block_size, n);
 
-        // Factor the diagonal panel with an unblocked lower-triangular kernel while preserving the mirrored upper triangle required by the coursework.
+        // Factor the diagonal panel and preserve the mirrored upper triangle.
         for (int p = block_start; p < block_end; ++p) {
             double* const row_p = row_ptr(p);
             const double diag_entry = row_p[p];
@@ -118,8 +118,8 @@ double cholesky(double* c, int n) {
             }
         }
 
-        // Solve the block column below the panel after panel factorization; rows below the panel are independent, so this is a safe OpenMP region.
-        // This `parallel for` distributes independent rows of the solved block column to reduce the panel-to-trailing handoff cost.
+        // Rows below the panel are independent once the panel is factored.
+        // Parallelize over rows to solve the block column.
 #pragma omp parallel for schedule(runtime) if (n - block_end > block_size)
         for (int i = block_end; i < n; ++i) {
             double* const row_i = row_ptr(i);
@@ -128,7 +128,7 @@ double cholesky(double* c, int n) {
                 double* const row_j = row_ptr(j);
                 double dot = 0.0;
 
-                // This `simd` reduction vectorizes the panel dot product because each term is independent and feeds one scalar accumulation.
+                // Vectorize the panel dot product reduction.
  #pragma omp simd reduction(+:dot)
                 for (int p = block_start; p < j; ++p) {
                     dot += row_i[p] * row_j[p];
@@ -139,8 +139,8 @@ double cholesky(double* c, int n) {
             }
         }
 
-        // Update the trailing matrix tile by tile; each outer i-block owns disjoint row ranges in the lower triangle, making it the main OpenMP hotspot.
-        // This `parallel for` spreads independent trailing tiles across threads while preserving deterministic writes to disjoint lower-triangular regions.
+        // Each outer tile owns disjoint lower-triangular rows in the trailing matrix.
+        // Parallelize over those tiles in the main OpenMP hotspot.
 #pragma omp parallel for schedule(runtime) if (n - block_end > block_size)
         for (int i_block = block_end; i_block < n; i_block += block_size) {
             const int i_end = std::min(i_block + block_size, n);
@@ -156,7 +156,7 @@ double cholesky(double* c, int n) {
                         double* const row_j = row_ptr(j);
                         double dot = 0.0;
 
-                        // This `simd` reduction vectorizes the rank-k accumulation inside each tile because the dot-product terms are independent.
+                        // Vectorize the rank-k accumulation inside each tile.
  #pragma omp simd reduction(+:dot)
                         for (int p = block_start; p < block_end; ++p) {
                             dot += row_i[p] * row_j[p];

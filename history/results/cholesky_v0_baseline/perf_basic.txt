@@ -4,73 +4,73 @@ repetitions=7
 warmup=1
 ===== n=128
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 128 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-56475458,,cycles:u,30093740,100.00,,
-55269973,,instructions:u,30093740,100.00,0.98,insn per cycle
-26940,,cache-references:u,30093740,100.00,,
-11042,,cache-misses:u,30093740,100.00,40.987,of all cache refs
+46014027,,cycles:u,14094009,100.00,,
+56109050,,instructions:u,14094009,100.00,1.22,insn per cycle
+21728,,cache-references:u,14094009,100.00,,
+10291,,cache-misses:u,14094009,100.00,47.363,of all cache refs
 exit_status=0
 
 ===== n=256
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 256 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-535458178,,cycles:u,158903590,100.00,,
-413785056,,instructions:u,158903590,100.00,0.77,insn per cycle
-92131,,cache-references:u,158903590,100.00,,
-12563,,cache-misses:u,158903590,100.00,13.636,of all cache refs
+445857827,,cycles:u,122795991,100.00,,
+414622762,,instructions:u,122795991,100.00,0.93,insn per cycle
+41783,,cache-references:u,122795991,100.00,,
+7142,,cache-misses:u,122795991,100.00,17.093,of all cache refs
 exit_status=0
 
 ===== n=512
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 512 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-7365779958,,cycles:u,2040784962,100.00,,
-3257026315,,instructions:u,2040784962,100.00,0.44,insn per cycle
-544313978,,cache-references:u,2040784962,100.00,,
-370255,,cache-misses:u,2040784962,100.00,0.068,of all cache refs
+6046762043,,cycles:u,1643912677,100.00,,
+3257863257,,instructions:u,1643912677,100.00,0.54,insn per cycle
+421681720,,cache-references:u,1643912677,100.00,,
+69390,,cache-misses:u,1643912677,100.00,0.016,of all cache refs
 exit_status=0
 
 ===== n=1000
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 1000 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-12983958354,,cycles:u,3662429261,100.00,,
-24128120126,,instructions:u,3662429261,100.00,1.86,insn per cycle
-328747147,,cache-references:u,3662429261,100.00,,
-1601488,,cache-misses:u,3662429261,100.00,0.487,of all cache refs
+12298409226,,cycles:u,3342730560,100.00,,
+24128956765,,instructions:u,3342730560,100.00,1.96,insn per cycle
+328783183,,cache-references:u,3342730560,100.00,,
+284711,,cache-misses:u,3342730560,100.00,0.087,of all cache refs
 exit_status=0
 
 ===== n=1024
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 1024 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-61795844219,,cycles:u,16938949305,100.00,,
-25904000819,,instructions:u,16938949305,100.00,0.42,insn per cycle
-5166521892,,cache-references:u,16938949305,100.00,,
-1867685,,cache-misses:u,16938949305,100.00,0.036,of all cache refs
+61962775213,,cycles:u,16820344243,100.00,,
+25904834760,,instructions:u,16820344243,100.00,0.42,insn per cycle
+5574204764,,cache-references:u,16820344243,100.00,,
+113221,,cache-misses:u,16820344243,100.00,0.002,of all cache refs
 exit_status=0
 
 ===== n=1536
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 1536 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-208350900561,,cycles:u,57830005439,100.00,,
-87287757393,,instructions:u,57830005439,100.00,0.42,insn per cycle
-19151367252,,cache-references:u,57830005439,100.00,,
-29113684,,cache-misses:u,57830005439,100.00,0.152,of all cache refs
+208534925193,,cycles:u,56598804455,100.00,,
+87288580794,,instructions:u,56598804455,100.00,0.42,insn per cycle
+19077599013,,cache-references:u,56598804455,100.00,,
+2789273,,cache-misses:u,56598804455,100.00,0.015,of all cache refs
 exit_status=0
 
 ===== n=1792
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 1792 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-351078405090,,cycles:u,99230259582,100.00,,
-138537210865,,instructions:u,99230259582,100.00,0.39,insn per cycle
-29516258172,,cache-references:u,99230259582,100.00,,
-787091150,,cache-misses:u,99230259582,100.00,2.667,of all cache refs
+315826801050,,cycles:u,85732067588,100.00,,
+138538013336,,instructions:u,85732067588,100.00,0.44,insn per cycle
+28610740870,,cache-references:u,85732067588,100.00,,
+4346264,,cache-misses:u,85732067588,100.00,0.015,of all cache refs
 exit_status=0
 
 ===== n=2048
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 2048 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-602286760829,,cycles:u,169064023240,100.00,,
-206715383435,,instructions:u,169064023240,100.00,0.34,insn per cycle
-49978466373,,cache-references:u,169064023240,100.00,,
-1135033933,,cache-misses:u,169064023240,100.00,2.271,of all cache refs
+504841774252,,cycles:u,137002198976,100.00,,
+206716151644,,instructions:u,137002198976,100.00,0.41,insn per cycle
+45593109562,,cache-references:u,137002198976,100.00,,
+14085739,,cache-misses:u,137002198976,100.00,0.031,of all cache refs
 exit_status=0
 
 ===== n=2304
 command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 2304 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
-706380733153,,cycles:u,194996470251,100.00,,
-294238197018,,instructions:u,194996470251,100.00,0.42,insn per cycle
-64030308855,,cache-references:u,194996470251,100.00,,
-1065090492,,cache-misses:u,194996470251,100.00,1.663,of all cache refs
+688122602676,,cycles:u,186806475775,100.00,,
+294238984075,,instructions:u,186806475775,100.00,0.43,insn per cycle
+63184091321,,cache-references:u,186806475775,100.00,,
+60014031,,cache-misses:u,186806475775,100.00,0.095,of all cache refs
 exit_status=0
 
