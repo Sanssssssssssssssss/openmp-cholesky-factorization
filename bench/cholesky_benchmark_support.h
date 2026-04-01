@@ -25,10 +25,14 @@ struct CholeskyBenchmarkResult {
     double max_seconds = 0.0;
     double estimated_flops = 0.0;
     double median_gflops = 0.0;
+    double matrix_bytes = 0.0;
+    double matrix_mib = 0.0;
 };
 
 bool validate_benchmark_config(const CholeskyBenchmarkConfig& config, std::ostream& err);
 CholeskyBenchmarkResult run_cholesky_benchmark(const CholeskyBenchmarkConfig& config, std::ostream& err);
 void write_benchmark_result(std::ostream& out, const CholeskyBenchmarkResult& result);
+void write_benchmark_csv_header(std::ostream& out);
+void write_benchmark_csv_row(std::ostream& out, const std::string& sweep, const CholeskyBenchmarkResult& result);
 
 #endif

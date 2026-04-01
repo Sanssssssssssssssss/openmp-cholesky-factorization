@@ -1,4 +1,4 @@
-label=cholesky_v0_baseline
+label=cholesky_v1_serial_opt
 repetitions=7
 warmup=1
 correctness=passed

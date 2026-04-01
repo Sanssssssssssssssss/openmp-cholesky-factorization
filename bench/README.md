@@ -23,3 +23,22 @@ Unified suite entrypoint:
 ```
 
 This suite runs the correctness checks first, then writes coarse, fine, and large timing sweeps to `history/results/<label>/`.
+
+Generated outputs include:
+
+- `correctness.txt`
+- `time_coarse.txt`
+- `time_fine.txt`
+- `time_large.txt`
+- `sweeps.csv`
+- `metadata.txt`
+- `perf_basic.txt`
+- `perf_basic.csv`
+- `summary.txt`
+
+When `perf` is available, the suite currently records:
+
+- `cycles`
+- `instructions`
+- `cache-references`
+- `cache-misses`

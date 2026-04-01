@@ -41,6 +41,11 @@ double estimate_cholesky_flops(int n) {
     return dimension * dimension * dimension / 3.0;
 }
 
+double estimate_matrix_bytes(int n) {
+    const double dimension = static_cast<double>(n);
+    return dimension * dimension * static_cast<double>(sizeof(double));
+}
+
 }  // namespace
 
 bool validate_benchmark_config(const CholeskyBenchmarkConfig& config, std::ostream& err) {
@@ -101,6 +106,8 @@ CholeskyBenchmarkResult run_cholesky_benchmark(const CholeskyBenchmarkConfig& co
     result.median_gflops = result.median_seconds > 0.0
                                ? result.estimated_flops / result.median_seconds / 1.0e9
                                : 0.0;
+    result.matrix_bytes = estimate_matrix_bytes(config.n);
+    result.matrix_mib = result.matrix_bytes / (1024.0 * 1024.0);
 
     return result;
 }
@@ -122,4 +129,30 @@ void write_benchmark_result(std::ostream& out, const CholeskyBenchmarkResult& re
     out << "max_seconds=" << result.max_seconds << '\n';
     out << "estimated_flops=" << result.estimated_flops << '\n';
     out << "median_gflops=" << result.median_gflops << '\n';
+    out << "matrix_bytes=" << result.matrix_bytes << '\n';
+    out << "matrix_mib=" << result.matrix_mib << '\n';
+}
+
+void write_benchmark_csv_header(std::ostream& out) {
+    out << "sweep,label,generator,n,repetitions,warmup,min_seconds,median_seconds,mean_seconds,max_seconds,"
+           "estimated_flops,median_gflops,matrix_bytes,matrix_mib\n";
+}
+
+void write_benchmark_csv_row(std::ostream& out, const std::string& sweep, const CholeskyBenchmarkResult& result) {
+    out.setf(std::ios::fixed);
+    out.precision(9);
+    out << sweep << ','
+        << result.label << ','
+        << result.generator << ','
+        << result.n << ','
+        << result.repetitions << ','
+        << result.warmup << ','
+        << result.min_seconds << ','
+        << result.median_seconds << ','
+        << result.mean_seconds << ','
+        << result.max_seconds << ','
+        << result.estimated_flops << ','
+        << result.median_gflops << ','
+        << result.matrix_bytes << ','
+        << result.matrix_mib << '\n';
 }

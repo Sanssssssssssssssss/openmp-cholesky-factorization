@@ -1,0 +1,44 @@
+benchmark=/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark
+events=cycles,instructions,cache-references,cache-misses
+repetitions=7
+warmup=1
+===== n=128
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 128 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
+55499474,,cycles:u,31544352,100.00,,
+37046267,,instructions:u,31544352,100.00,0.67,insn per cycle
+24641,,cache-references:u,31544352,100.00,,
+11517,,cache-misses:u,31544352,100.00,46.739,of all cache refs
+exit_status=0
+
+===== n=256
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 256 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
+537625102,,cycles:u,169086080,100.00,,
+269139456,,instructions:u,169086080,100.00,0.50,insn per cycle
+100214,,cache-references:u,169086080,100.00,,
+11976,,cache-misses:u,169086080,100.00,11.950,of all cache refs
+exit_status=0
+
+===== n=512
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 512 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
+7395388234,,cycles:u,2066478252,100.00,,
+2097706126,,instructions:u,2066478252,100.00,0.28,insn per cycle
+537822977,,cache-references:u,2066478252,100.00,,
+268238,,cache-misses:u,2066478252,100.00,0.050,of all cache refs
+exit_status=0
+
+===== n=1000
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 1000 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
+12966808850,,cycles:u,3794297833,100.00,,
+15477058941,,instructions:u,3794297833,100.00,1.19,insn per cycle
+336558563,,cache-references:u,3794297833,100.00,,
+1138351,,cache-misses:u,3794297833,100.00,0.338,of all cache refs
+exit_status=0
+
+===== n=1024
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v0_baseline_benchmark' 1024 7 1 'cholesky_v0_baseline_perf' 2>&1 >/dev/null
+59009571266,,cycles:u,16519132915,100.00,,
+16614635087,,instructions:u,16519132915,100.00,0.28,insn per cycle
+5038933437,,cache-references:u,16519132915,100.00,,
+2156614,,cache-misses:u,16519132915,100.00,0.043,of all cache refs
+exit_status=0
+

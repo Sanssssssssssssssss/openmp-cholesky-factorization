@@ -1,15 +1,234 @@
+#include "build_info.h"
 #include "cholesky_benchmark_support.h"
 #include "cholesky_test_suite.h"
 
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
+#include <sys/utsname.h>
+#include <unistd.h>
 #include <vector>
 
 namespace {
 
+std::string shell_quote(const std::string& value) {
+    std::string quoted = "'";
+    for (const char ch : value) {
+        if (ch == '\'') {
+            quoted += "'\"'\"'";
+        } else {
+            quoted += ch;
+        }
+    }
+    quoted += "'";
+    return quoted;
+}
+
+std::string benchmark_path_from_suite_path(const char* argv0) {
+    std::filesystem::path executable_path = std::filesystem::absolute(std::filesystem::path(argv0));
+    const std::string suite_name = executable_path.filename().string();
+    constexpr const char* suite_suffix = "_benchmark_suite";
+
+    if (suite_name.size() > std::char_traits<char>::length(suite_suffix) &&
+        suite_name.compare(suite_name.size() - std::char_traits<char>::length(suite_suffix),
+                           std::char_traits<char>::length(suite_suffix),
+                           suite_suffix) == 0) {
+        const std::string benchmark_name =
+            suite_name.substr(0, suite_name.size() - std::char_traits<char>::length(suite_suffix)) +
+            "_benchmark";
+        executable_path.replace_filename(benchmark_name);
+        return executable_path.string();
+    }
+
+    return {};
+}
+
+std::string now_utc_iso8601() {
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t time_value = std::chrono::system_clock::to_time_t(now);
+    std::tm tm_value{};
+#if defined(_POSIX_VERSION)
+    gmtime_r(&time_value, &tm_value);
+#else
+    tm_value = *std::gmtime(&time_value);
+#endif
+    std::ostringstream out;
+    out << std::put_time(&tm_value, "%Y-%m-%dT%H:%M:%SZ");
+    return out.str();
+}
+
+std::string hostname_string() {
+    char buffer[256] = {};
+    if (gethostname(buffer, sizeof(buffer)) == 0) {
+        return std::string(buffer);
+    }
+    return "unknown";
+}
+
+std::string uname_string() {
+    struct utsname info {};
+    if (uname(&info) == 0) {
+        return std::string(info.sysname) + " " + info.release + " " + info.machine;
+    }
+    return "unknown";
+}
+
+bool perf_available() {
+    const int status = std::system("perf stat -x, -e cycles true >/dev/null 2>/dev/null");
+    return status == 0;
+}
+
+void write_metadata_file(const std::filesystem::path& output_path,
+                         const std::string& label,
+                         const std::string& suite_path,
+                         const std::string& benchmark_path,
+                         int repetitions,
+                         int warmup,
+                         bool perf_is_available) {
+    std::ofstream file(output_path);
+    if (!file) {
+        throw std::runtime_error("failed to open metadata file");
+    }
+
+    const char* omp_threads = std::getenv("OMP_NUM_THREADS");
+    const char* omp_places = std::getenv("OMP_PLACES");
+    const char* omp_proc_bind = std::getenv("OMP_PROC_BIND");
+
+    file << "label=" << label << '\n';
+    file << "timestamp_utc=" << now_utc_iso8601() << '\n';
+    file << "hostname=" << hostname_string() << '\n';
+    file << "platform=" << uname_string() << '\n';
+    file << "compiler_id=" << CHOLESKY_BUILD_COMPILER_ID << '\n';
+    file << "compiler_version=" << CHOLESKY_BUILD_COMPILER_VERSION << '\n';
+    file << "build_type=" << CHOLESKY_BUILD_TYPE << '\n';
+    file << "benchmark_suite_executable=" << suite_path << '\n';
+    file << "benchmark_executable=" << benchmark_path << '\n';
+    file << "repetitions=" << repetitions << '\n';
+    file << "warmup=" << warmup << '\n';
+    file << "omp_num_threads=" << (omp_threads != nullptr ? omp_threads : "unset") << '\n';
+    file << "omp_places=" << (omp_places != nullptr ? omp_places : "unset") << '\n';
+    file << "omp_proc_bind=" << (omp_proc_bind != nullptr ? omp_proc_bind : "unset") << '\n';
+    file << "perf_available=" << (perf_is_available ? "yes" : "no") << '\n';
+    file << "perf_events=cycles,instructions,cache-references,cache-misses\n";
+}
+
+bool collect_perf_stat(const std::filesystem::path& text_output_path,
+                       const std::filesystem::path& csv_output_path,
+                       const std::string& benchmark_path,
+                       const std::vector<int>& sizes,
+                       int repetitions,
+                       int warmup,
+                       const std::string& label) {
+    std::ofstream text_file(text_output_path);
+    std::ofstream csv_file(csv_output_path);
+    if (!text_file || !csv_file) {
+        std::cerr << "failed to open perf output files\n";
+        return false;
+    }
+
+    if (!perf_available()) {
+        text_file << "status=skipped\nreason=perf_unavailable\n";
+        csv_file << "status,event,n,count,unit,runtime_ns,enabled_pct,metric_value,metric_unit\n";
+        csv_file << "skipped,,,,,,,,\n";
+        std::cout << "[INFO] perf stat unavailable, skipped perf sweep\n";
+        return true;
+    }
+
+    csv_file << "status,event,n,count,unit,runtime_ns,enabled_pct,metric_value,metric_unit\n";
+    text_file << "benchmark=" << benchmark_path << '\n';
+    text_file << "events=cycles,instructions,cache-references,cache-misses\n";
+    text_file << "repetitions=" << repetitions << '\n';
+    text_file << "warmup=" << warmup << '\n';
+
+    if (!std::filesystem::exists(benchmark_path)) {
+        text_file << "status=skipped\nreason=benchmark_executable_missing\n";
+        csv_file << "skipped,,,,,,,,\n";
+        return true;
+    }
+
+    for (const int n : sizes) {
+        const std::string command =
+            "perf stat -x, -e cycles,instructions,cache-references,cache-misses " +
+            shell_quote(benchmark_path) + " " +
+            std::to_string(n) + " " +
+            std::to_string(repetitions) + " " +
+            std::to_string(warmup) + " " +
+            shell_quote(label + "_perf") +
+            " 2>&1 >/dev/null";
+
+        std::cout << "[INFO] Running perf sweep for n=" << n << '\n';
+        text_file << "===== n=" << n << '\n';
+        text_file << "command=" << command << '\n';
+
+        FILE* pipe = popen(command.c_str(), "r");
+        if (pipe == nullptr) {
+            text_file << "status=failed\nreason=popen_failed\n\n";
+            csv_file << "failed,," << n << ",,,,,,\n";
+            return false;
+        }
+
+        char buffer[4096];
+        while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+            const std::string line(buffer);
+            text_file << line;
+
+            std::stringstream line_stream(line);
+            std::vector<std::string> fields;
+            std::string field;
+            while (std::getline(line_stream, field, ',')) {
+                fields.push_back(field);
+            }
+
+            if (fields.size() < 3) {
+                continue;
+            }
+
+            if (fields[2].find(':') == std::string::npos && fields[2] != "cycles" &&
+                fields[2] != "instructions" && fields[2] != "cache-references" &&
+                fields[2] != "cache-misses") {
+                continue;
+            }
+
+            const std::string event = fields[2];
+            const std::string count = fields.size() > 0 ? fields[0] : "";
+            const std::string unit = fields.size() > 1 ? fields[1] : "";
+            const std::string runtime_ns = fields.size() > 3 ? fields[3] : "";
+            const std::string enabled_pct = fields.size() > 4 ? fields[4] : "";
+            const std::string metric_value = fields.size() > 5 ? fields[5] : "";
+            const std::string metric_unit = fields.size() > 6 ? fields[6] : "";
+
+            csv_file << "ok,"
+                     << event << ','
+                     << n << ','
+                     << count << ','
+                     << unit << ','
+                     << runtime_ns << ','
+                     << enabled_pct << ','
+                     << metric_value << ','
+                     << metric_unit << '\n';
+        }
+
+        const int status = pclose(pipe);
+        text_file << "exit_status=" << status << "\n\n";
+        if (status != 0) {
+            csv_file << "failed,," << n << ",,,,,,\n";
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool run_and_record_sweep(const std::filesystem::path& output_path,
+                          std::ostream& csv_out,
                           const std::string& suite_name,
                           const std::vector<int>& sizes,
                           int repetitions,
@@ -39,6 +258,7 @@ bool run_and_record_sweep(const std::filesystem::path& output_path,
         file << "===== n=" << n << '\n';
         write_benchmark_result(file, result);
         file << '\n';
+        write_benchmark_csv_row(csv_out, suite_name, result);
 
         std::cout << "[INFO] n=" << n << " median_seconds=" << result.median_seconds
                   << " median_gflops=" << result.median_gflops << '\n';
@@ -66,6 +286,27 @@ int main(int argc, char** argv) {
 
     const std::filesystem::path output_dir = std::filesystem::path("history") / "results" / label;
     std::filesystem::create_directories(output_dir);
+    const std::string benchmark_path = benchmark_path_from_suite_path(argv[0]);
+    const std::filesystem::path csv_path = output_dir / "sweeps.csv";
+    std::ofstream csv_file(csv_path);
+    if (!csv_file) {
+        std::cerr << "failed to open " << csv_path << '\n';
+        return 1;
+    }
+    write_benchmark_csv_header(csv_file);
+
+    try {
+        write_metadata_file(output_dir / "metadata.txt",
+                            label,
+                            std::filesystem::absolute(std::filesystem::path(argv[0])).string(),
+                            benchmark_path,
+                            repetitions,
+                            warmup,
+                            perf_available());
+    } catch (const std::exception& exception) {
+        std::cerr << exception.what() << '\n';
+        return 1;
+    }
 
     {
         const std::filesystem::path correctness_path = output_dir / "correctness.txt";
@@ -86,11 +327,12 @@ int main(int argc, char** argv) {
         }
     }
 
-    const std::vector<int> coarse_sizes = {1, 2, 4, 8, 10, 16, 32, 64, 100, 124, 128, 256, 512, 1000, 1024};
-    const std::vector<int> fine_sizes = {992, 1000, 1008, 1013, 1024, 1032};
+    const std::vector<int> coarse_sizes = {1, 2, 4, 8, 10, 16, 32, 64, 100, 124, 127, 128, 129, 255, 256, 257, 511, 512, 513, 1000, 1024};
+    const std::vector<int> fine_sizes = {992, 1000, 1008, 1013, 1023, 1024, 1025, 1032};
     const std::vector<int> large_sizes = {1152, 1280};
 
     if (!run_and_record_sweep(output_dir / "time_coarse.txt",
+                              csv_file,
                               "coarse",
                               coarse_sizes,
                               repetitions,
@@ -100,6 +342,7 @@ int main(int argc, char** argv) {
     }
 
     if (!run_and_record_sweep(output_dir / "time_fine.txt",
+                              csv_file,
                               "fine",
                               fine_sizes,
                               repetitions,
@@ -109,12 +352,36 @@ int main(int argc, char** argv) {
     }
 
     if (!run_and_record_sweep(output_dir / "time_large.txt",
+                              csv_file,
                               "large",
                               large_sizes,
                               repetitions,
                               warmup,
                               label)) {
         return 1;
+    }
+
+    const std::vector<int> perf_sizes = {128, 256, 512, 1000, 1024};
+    if (!benchmark_path.empty()) {
+        if (!collect_perf_stat(output_dir / "perf_basic.txt",
+                               output_dir / "perf_basic.csv",
+                               benchmark_path,
+                               perf_sizes,
+                               repetitions,
+                               warmup,
+                               label)) {
+            return 1;
+        }
+    } else {
+        std::ofstream text_file(output_dir / "perf_basic.txt");
+        std::ofstream perf_csv_file(output_dir / "perf_basic.csv");
+        if (!text_file || !perf_csv_file) {
+            std::cerr << "failed to open perf fallback files\n";
+            return 1;
+        }
+        text_file << "status=skipped\nreason=benchmark_executable_path_unresolved\n";
+        perf_csv_file << "status,event,n,count,unit,runtime_ns,enabled_pct,metric_value,metric_unit\n";
+        perf_csv_file << "skipped,,,,,,,,\n";
     }
 
     const std::filesystem::path summary_path = output_dir / "summary.txt";
@@ -128,7 +395,7 @@ int main(int argc, char** argv) {
     summary_file << "repetitions=" << repetitions << '\n';
     summary_file << "warmup=" << warmup << '\n';
     summary_file << "correctness=passed\n";
-    summary_file << "files=correctness.txt,time_coarse.txt,time_fine.txt,time_large.txt\n";
+    summary_file << "files=correctness.txt,time_coarse.txt,time_fine.txt,time_large.txt,sweeps.csv,metadata.txt,perf_basic.txt,perf_basic.csv\n";
 
     std::cout << "[INFO] Wrote suite results to " << output_dir << '\n';
     return 0;

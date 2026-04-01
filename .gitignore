@@ -37,3 +37,9 @@ __pycache__/
 *.log
 *.toc
 *.out
+
+# Temporary benchmark validation outputs
+/history/results/*_check/
+/history/results/*_probe/
+/history/results/.gitkeep
+/history/versions/.gitkeep

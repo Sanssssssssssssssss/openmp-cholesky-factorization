@@ -9,5 +9,6 @@ struct CholeskyTestSummary {
 };
 
 CholeskyTestSummary run_cholesky_tests(std::ostream& out, std::ostream& err);
+double compute_factorized_logdet_for_tests(const double* matrix, int n);
 
 #endif

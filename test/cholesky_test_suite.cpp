@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 namespace {
@@ -89,6 +90,35 @@ double logdet_from_factorized_matrix(const std::vector<double>& matrix, int n) {
     return 2.0 * sum;
 }
 
+std::vector<double> make_diagonal_matrix(const std::vector<double>& diagonal) {
+    const int n = static_cast<int>(diagonal.size());
+    std::vector<double> matrix(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+
+    for (int i = 0; i < n; ++i) {
+        matrix[static_cast<std::size_t>(i) * n + i] = diagonal[static_cast<std::size_t>(i)];
+    }
+
+    return matrix;
+}
+
+std::vector<double> make_dense_factor(int n) {
+    std::vector<double> lower(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j <= i; ++j) {
+            if (i == j) {
+                lower[static_cast<std::size_t>(i) * n + j] = 1.5 + 0.25 * static_cast<double>(i);
+            } else {
+                const double sign = ((i + j) % 2 == 0) ? 1.0 : -1.0;
+                lower[static_cast<std::size_t>(i) * n + j] =
+                    sign * (0.2 + 0.05 * static_cast<double>((i + 1) * (j + 1)));
+            }
+        }
+    }
+
+    return lower;
+}
+
 std::vector<double> make_corr_matrix(int n) {
     std::vector<double> matrix(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
 
@@ -131,6 +161,37 @@ bool test_coursework_example() {
            output_has_mirrored_triangles(matrix, 2);
 }
 
+bool test_coursework_example_logdet() {
+    std::vector<double> matrix = {
+        4.0, 2.0,
+        2.0, 26.0,
+    };
+
+    if (cholesky(matrix.data(), 2) < 0.0) {
+        return false;
+    }
+
+    return nearly_equal(logdet_from_factorized_matrix(matrix, 2), std::log(100.0));
+}
+
+bool test_diagonal_matrix_factorization() {
+    const std::vector<double> diagonal = {4.0, 9.0, 16.0, 25.0};
+    std::vector<double> matrix = make_diagonal_matrix(diagonal);
+
+    if (cholesky(matrix.data(), static_cast<int>(diagonal.size())) < 0.0) {
+        return false;
+    }
+
+    const std::vector<double> expected = {
+        2.0, 0.0, 0.0, 0.0,
+        0.0, 3.0, 0.0, 0.0,
+        0.0, 0.0, 4.0, 0.0,
+        0.0, 0.0, 0.0, 5.0,
+    };
+
+    return matrices_close(matrix, expected);
+}
+
 bool test_known_three_by_three_factor() {
     const int n = 3;
     const std::vector<double> lower = {
@@ -156,6 +217,24 @@ bool test_known_three_by_three_factor() {
 
     const auto rebuilt = multiply_lower_by_transpose(extract_lower_factor(matrix, n), n);
     return matrices_close(rebuilt, original);
+}
+
+bool test_known_four_by_four_rebuild() {
+    const int n = 4;
+    const std::vector<double> lower = make_dense_factor(n);
+    const std::vector<double> original = multiply_lower_by_transpose(lower, n);
+    std::vector<double> matrix = original;
+
+    if (cholesky(matrix.data(), n) < 0.0) {
+        return false;
+    }
+
+    if (!output_has_mirrored_triangles(matrix, n)) {
+        return false;
+    }
+
+    const auto rebuilt = multiply_lower_by_transpose(extract_lower_factor(matrix, n), n);
+    return matrices_close(rebuilt, original, 1e-9);
 }
 
 bool test_corr_matrix_rebuild_and_logdet() {
@@ -190,6 +269,33 @@ bool test_invalid_input_rejected() {
            cholesky(non_spd.data(), 2) < 0.0;
 }
 
+bool test_subdiagonal_entries_become_positive_for_corr_matrix() {
+    const int n = 8;
+    std::vector<double> matrix = make_corr_matrix(n);
+
+    if (cholesky(matrix.data(), n) < 0.0) {
+        return false;
+    }
+
+    for (int i = 0; i < n; ++i) {
+        const double diagonal = matrix[static_cast<std::size_t>(i) * n + i];
+        if (!(diagonal > 0.0) || !std::isfinite(diagonal)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool test_input_with_negative_diagonal_fails() {
+    std::vector<double> matrix = {
+        -1.0, 0.0,
+         0.0, 1.0,
+    };
+
+    return cholesky(matrix.data(), 2) < 0.0;
+}
+
 }  // namespace
 
 CholeskyTestSummary run_cholesky_tests(std::ostream& out, std::ostream& err) {
@@ -202,9 +308,14 @@ CholeskyTestSummary run_cholesky_tests(std::ostream& out, std::ostream& err) {
         {"zero_size_matrix", test_zero_size_matrix},
         {"one_by_one_matrix", test_one_by_one_matrix},
         {"coursework_example", test_coursework_example},
+        {"coursework_example_logdet", test_coursework_example_logdet},
+        {"diagonal_matrix_factorization", test_diagonal_matrix_factorization},
         {"known_three_by_three_factor", test_known_three_by_three_factor},
+        {"known_four_by_four_rebuild", test_known_four_by_four_rebuild},
         {"corr_matrix_rebuild_and_logdet", test_corr_matrix_rebuild_and_logdet},
+        {"corr_matrix_positive_diagonal", test_subdiagonal_entries_become_positive_for_corr_matrix},
         {"invalid_input_rejected", test_invalid_input_rejected},
+        {"negative_diagonal_fails", test_input_with_negative_diagonal_fails},
     };
 
     CholeskyTestSummary summary;
@@ -223,4 +334,16 @@ CholeskyTestSummary run_cholesky_tests(std::ostream& out, std::ostream& err) {
     }
 
     return summary;
+}
+
+double compute_factorized_logdet_for_tests(const double* matrix, int n) {
+    if (matrix == nullptr || n < 0) {
+        return -std::numeric_limits<double>::infinity();
+    }
+
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i) {
+        sum += std::log(matrix[static_cast<std::size_t>(i) * n + i]);
+    }
+    return 2.0 * sum;
 }
