@@ -101,6 +101,7 @@ void write_metadata_file(const std::filesystem::path& output_path,
     const char* omp_threads = std::getenv("OMP_NUM_THREADS");
     const char* omp_places = std::getenv("OMP_PLACES");
     const char* omp_proc_bind = std::getenv("OMP_PROC_BIND");
+    const char* cholesky_block_size = std::getenv("CHOLESKY_BLOCK_SIZE");
 
     file << "label=" << label << '\n';
     file << "timestamp_utc=" << now_utc_iso8601() << '\n';
@@ -116,6 +117,7 @@ void write_metadata_file(const std::filesystem::path& output_path,
     file << "omp_num_threads=" << (omp_threads != nullptr ? omp_threads : "unset") << '\n';
     file << "omp_places=" << (omp_places != nullptr ? omp_places : "unset") << '\n';
     file << "omp_proc_bind=" << (omp_proc_bind != nullptr ? omp_proc_bind : "unset") << '\n';
+    file << "cholesky_block_size=" << (cholesky_block_size != nullptr ? cholesky_block_size : "unset") << '\n';
     file << "perf_available=" << (perf_is_available ? "yes" : "no") << '\n';
     file << "perf_events=cycles,instructions,cache-references,cache-misses\n";
 }

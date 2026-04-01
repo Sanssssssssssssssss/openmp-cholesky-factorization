@@ -62,6 +62,7 @@ function(add_cholesky_variant variant_name variant_source_root)
 
     add_executable(${variant_name}_tests test/test_cholesky.cpp)
     target_link_libraries(${variant_name}_tests PRIVATE ${variant_name}_test_support)
+    set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_TEST_TARGETS ${variant_name}_tests)
 
     if(variant_name STREQUAL "cholesky")
         add_test(NAME cholesky_tests COMMAND cholesky_tests)
@@ -71,6 +72,7 @@ function(add_cholesky_variant variant_name variant_source_root)
 
     add_executable(${variant_name}_benchmark bench/benchmark_cholesky.cpp)
     target_link_libraries(${variant_name}_benchmark PRIVATE ${variant_name}_benchmark_support)
+    set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_BENCHMARK_TARGETS ${variant_name}_benchmark)
 
     add_executable(${variant_name}_benchmark_suite bench/cholesky_benchmark_suite.cpp)
     target_include_directories(${variant_name}_benchmark_suite PRIVATE
@@ -82,6 +84,7 @@ function(add_cholesky_variant variant_name variant_source_root)
         ${variant_name}_benchmark_support
         cholesky_filesystem_compat
     )
+    set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_BENCHMARK_SUITE_TARGETS ${variant_name}_benchmark_suite)
 endfunction()
 
 add_cholesky_variant(cholesky ${CMAKE_CURRENT_SOURCE_DIR})
@@ -95,3 +98,46 @@ foreach(history_variant_dir ${history_variant_dirs})
         add_cholesky_variant(${history_variant_name} ${history_variant_dir})
     endif()
 endforeach()
+
+set(v1_reference_root ${CMAKE_CURRENT_SOURCE_DIR}/history/versions/cholesky_v1_serial_opt)
+if(EXISTS ${v1_reference_root}/include/mphil_dis_cholesky.h AND EXISTS ${v1_reference_root}/src/cholesky.cpp)
+    add_library(cholesky_v1_reference test/cholesky_v1_reference.cpp)
+    target_include_directories(cholesky_v1_reference PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+        ${v1_reference_root}/include
+    )
+
+    add_executable(cholesky_against_v1_tests test/test_against_v1.cpp)
+    target_include_directories(cholesky_against_v1_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
+    target_link_libraries(cholesky_against_v1_tests PRIVATE cholesky cholesky_v1_reference)
+    add_test(NAME cholesky_against_v1_tests COMMAND cholesky_against_v1_tests)
+    set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_TEST_TARGETS cholesky_against_v1_tests)
+endif()
+
+get_property(all_test_targets GLOBAL PROPERTY CHOLESKY_ALL_TEST_TARGETS)
+if(all_test_targets)
+    add_custom_target(cholesky_all_tests DEPENDS ${all_test_targets})
+endif()
+
+get_property(all_benchmark_targets GLOBAL PROPERTY CHOLESKY_ALL_BENCHMARK_TARGETS)
+if(all_benchmark_targets)
+    add_custom_target(cholesky_all_benchmarks DEPENDS ${all_benchmark_targets})
+endif()
+
+get_property(all_benchmark_suite_targets GLOBAL PROPERTY CHOLESKY_ALL_BENCHMARK_SUITE_TARGETS)
+if(all_benchmark_suite_targets)
+    add_custom_target(cholesky_all_benchmark_suites DEPENDS ${all_benchmark_suite_targets})
+endif()
+
+if(all_test_targets AND all_benchmark_targets AND all_benchmark_suite_targets)
+    add_custom_target(
+        cholesky_all_variants
+        DEPENDS
+            ${all_test_targets}
+            ${all_benchmark_targets}
+            ${all_benchmark_suite_targets}
+    )
+endif()

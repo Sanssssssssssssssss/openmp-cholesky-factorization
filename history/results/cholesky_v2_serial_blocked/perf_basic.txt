@@ -1,0 +1,44 @@
+benchmark=/home/cx272/c2_coursework/./build-release/cholesky_benchmark
+events=cycles,instructions,cache-references,cache-misses
+repetitions=7
+warmup=1
+===== n=128
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 128 7 1 'cholesky_v2_serial_blocked_perf' 2>&1 >/dev/null
+7641336,,cycles:u,12576946,100.00,,
+19351105,,instructions:u,12576946,100.00,2.53,insn per cycle
+24577,,cache-references:u,12576946,100.00,,
+10229,,cache-misses:u,12576946,100.00,41.620,of all cache refs
+exit_status=0
+
+===== n=256
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 256 7 1 'cholesky_v2_serial_blocked_perf' 2>&1 >/dev/null
+42159434,,cycles:u,29001741,100.00,,
+119293727,,instructions:u,29001741,100.00,2.83,insn per cycle
+87735,,cache-references:u,29001741,100.00,,
+9476,,cache-misses:u,29001741,100.00,10.801,of all cache refs
+exit_status=0
+
+===== n=512
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 512 7 1 'cholesky_v2_serial_blocked_perf' 2>&1 >/dev/null
+304781542,,cycles:u,104454398,100.00,,
+883352341,,instructions:u,104454398,100.00,2.90,insn per cycle
+4036186,,cache-references:u,104454398,100.00,,
+18855,,cache-misses:u,104454398,100.00,0.467,of all cache refs
+exit_status=0
+
+===== n=1000
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 1000 7 1 'cholesky_v2_serial_blocked_perf' 2>&1 >/dev/null
+2036722567,,cycles:u,563038320,100.00,,
+6404552339,,instructions:u,563038320,100.00,3.14,insn per cycle
+12110881,,cache-references:u,563038320,100.00,,
+93327,,cache-misses:u,563038320,100.00,0.771,of all cache refs
+exit_status=0
+
+===== n=1024
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 1024 7 1 'cholesky_v2_serial_blocked_perf' 2>&1 >/dev/null
+2253595752,,cycles:u,630177567,100.00,,
+6872606709,,instructions:u,630177567,100.00,3.05,insn per cycle
+47786554,,cache-references:u,630177567,100.00,,
+306820,,cache-misses:u,630177567,100.00,0.642,of all cache refs
+exit_status=0
+

@@ -67,3 +67,12 @@ history/results/<version>/
 ## Build rule
 
 Archived versions are for comparison and reference. They are available as dedicated CMake targets such as `<version>_tests`, `<version>_benchmark`, and `<version>_benchmark_suite`, and can be rerun without checking out older tags.
+
+The top-level build also exposes aggregate targets:
+
+- `cholesky_all_tests`
+- `cholesky_all_benchmarks`
+- `cholesky_all_benchmark_suites`
+- `cholesky_all_variants`
+
+These let the current version and all archived versions keep a uniform build structure as the project evolves.

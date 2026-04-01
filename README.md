@@ -7,14 +7,98 @@ Coursework repository for a CPU-based Cholesky factorization routine written in 
 - CMake 3.16 or newer
 - A C++17 compiler
 
-## Configure
+## Quick start
+
+Build the current version:
 
 ```bash
-cmake -S . -B build
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake --build build-release --target cholesky_all_variants
+```
+
+Run the most useful entrypoints:
+
+```bash
+./build-release/cholesky_example
+./build-release/cholesky_against_v1_tests
+OMP_NUM_THREADS=1 ./build-release/cholesky_benchmark_suite cholesky_v2_serial_blocked 7 1
+```
+
+What these give you:
+
+- `cholesky_example` shows the basic in-place API on the coursework 2x2 case.
+- `cholesky_against_v1_tests` checks the current implementation against archived `v1`, including block-boundary sizes.
+- `cholesky_benchmark_suite` writes a full result bundle to `history/results/<label>/`.
+
+For `cholesky_benchmark_suite cholesky_v2_serial_blocked 7 1`, the result directory contains:
+
+- `correctness.txt`
+- `time_coarse.txt`
+- `time_fine.txt`
+- `time_large.txt`
+- `sweeps.csv`
+- `metadata.txt`
+- `perf_basic.txt`
+- `perf_basic.csv`
+- `summary.txt`
+
+For the current blocked serial version, you can also set the block size explicitly:
+
+```bash
+OMP_NUM_THREADS=1 CHOLESKY_BLOCK_SIZE=32 ./build-release/cholesky_benchmark_suite cholesky_v2_serial_blocked 7 1
+```
+
+## Build options
+
+Debug build for development checks:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ```
 
-This produces the static library `build/libcholesky.a` together with the example, test, and benchmark executables.
+Release build for formal performance runs:
+
+```bash
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake --build build-release --target cholesky_all_variants
+```
+
+This produces the static library `build-release/libcholesky.a` together with the example, test, and benchmark executables.
+
+## Common commands
+
+Debug correctness:
+
+```bash
+ctest --test-dir build --output-on-failure
+./build/cholesky_tests
+./build/cholesky_against_v1_tests
+```
+
+Single benchmark run:
+
+```bash
+OMP_NUM_THREADS=1 CHOLESKY_BLOCK_SIZE=32 ./build-release/cholesky_benchmark 1024 5 1 cholesky_v2_serial_blocked
+```
+
+Formal suite run:
+
+```bash
+OMP_NUM_THREADS=1 CHOLESKY_BLOCK_SIZE=32 ./build-release/cholesky_benchmark_suite cholesky_v2_serial_blocked 7 1
+```
+
+Archived version run:
+
+```bash
+OMP_NUM_THREADS=1 ./build-release/cholesky_v1_serial_opt_benchmark_suite cholesky_v1_serial_opt 7 1
+```
+
+## What to read next
+
+- If you want to use the library in your own code, go to `Build and use the library`.
+- If you want to compare versions or rerun archived milestones, go to `Rerunning archived versions`.
+- If you want the benchmark/result format, go to `Validation and benchmarking`.
 
 ## Build and use the library
 
@@ -49,33 +133,10 @@ If you want to compile and link manually after building, use the generated stati
 icpx -std=c++17 -Iinclude your_program.cpp build/libcholesky.a -o your_program
 ```
 
-## Run the current utilities
-
-```bash
-./build/cholesky_example
-ctest --test-dir build --output-on-failure
-./build/cholesky_benchmark 512 5 1 cholesky_v0_baseline
-./build/cholesky_benchmark_suite cholesky_v0_baseline 7 1
-```
-
-## Repository layout
-
-- `bench/` benchmark programs
-- `history/` archived versions and benchmark outputs
-- `include/` public headers
-- `src/` source files
-- `example/` example programs
-- `test/` tests
-- `report/` report files
-- `scripts/csd3/` job scripts for CSD3
-
-## Public interface
-
-The Cholesky routine is exposed through `include/mphil_dis_cholesky.h`.
-
 ## Validation and benchmarking
 
 - `cholesky_tests` runs the baseline correctness checks.
+- `cholesky_against_v1_tests` compares the current implementation against the archived `v1` reference on block-boundary sizes.
 - `cholesky_benchmark <n> [repetitions] [warmup] [label]` runs the serial benchmark driver on a generated SPD matrix.
 - `cholesky_benchmark_suite [label] [repetitions] [warmup]` runs correctness plus coarse, fine, and large timing sweeps and writes the outputs to `history/results/<label>/`.
 - The benchmark suite also writes `sweeps.csv`, `metadata.txt`, `perf_basic.txt`, and `perf_basic.csv`.
@@ -94,29 +155,6 @@ The Cholesky routine is exposed through `include/mphil_dis_cholesky.h`.
 - Keep one primary compiler setting for cross-version comparisons; use separate runs if you want to study `-O1`, `-O2`, and `-O3`.
 - The current suite records `cycles`, `instructions`, `cache-references`, and `cache-misses` through `perf stat` when available.
 
-## Recommended formal run workflow
-
-Debug validation:
-
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
-ctest --test-dir build --output-on-failure
-./build/cholesky_tests
-```
-
-Release results for a formal version:
-
-```bash
-cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
-cmake --build build-release
-ctest --test-dir build-release --output-on-failure
-./build-release/cholesky_tests
-OMP_NUM_THREADS=1 ./build-release/cholesky_benchmark_suite cholesky_v1_serial_opt 7 1
-```
-
-Compiler-flags study for a fixed version should be run separately from the main version-to-version comparison.
-
 ## Rerunning archived versions
 
 Once a version has been copied into `history/versions/<version>/`, CMake also exposes dedicated targets for it:
@@ -129,3 +167,30 @@ OMP_NUM_THREADS=1 ./build-release/cholesky_v0_baseline_benchmark_suite cholesky_
 ```
 
 The same pattern applies to later archived versions such as `cholesky_v1_serial_opt`.
+
+To build the current version together with all archived version tests and benchmark executables in one step, use:
+
+```bash
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake --build build-release --target cholesky_all_variants
+```
+
+The aggregate targets also exist separately as:
+
+- `cholesky_all_tests`
+- `cholesky_all_benchmarks`
+- `cholesky_all_benchmark_suites`
+- `cholesky_all_variants`
+
+Compiler-flags study for a fixed version should be run separately from the main version-to-version comparison.
+
+## Repository layout
+
+- `bench/` benchmark programs
+- `history/` archived versions and benchmark outputs
+- `include/` public headers
+- `src/` source files
+- `example/` example programs
+- `test/` tests
+- `report/` report files
+- `scripts/csd3/` job scripts for CSD3
