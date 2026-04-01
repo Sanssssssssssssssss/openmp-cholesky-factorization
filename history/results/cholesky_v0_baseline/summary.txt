@@ -1,0 +1,5 @@
+label=cholesky_v0_baseline
+repetitions=7
+warmup=1
+correctness=passed
+files=correctness.txt,time_coarse.txt,time_fine.txt,time_large.txt

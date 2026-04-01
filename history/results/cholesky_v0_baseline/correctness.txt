@@ -1,0 +1,9 @@
+[PASS] zero_size_matrix
+[PASS] one_by_one_matrix
+[PASS] coursework_example
+[PASS] known_three_by_three_factor
+[PASS] corr_matrix_rebuild_and_logdet
+[PASS] invalid_input_rejected
+All correctness tests passed.
+total=6
+failures=0
