@@ -1,0 +1,10 @@
+[PASS] threads=1 n=65 current_seconds=1.010720e-04 current_repeat_seconds=8.268300e-05 reference_v2_seconds=8.126600e-05 rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+[PASS] threads=1 n=129 current_seconds=5.225410e-04 current_repeat_seconds=5.158940e-04 reference_v2_seconds=5.330770e-04 rebuild_max_abs_error=1.332268e-15 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+[PASS] threads=1 n=257 current_seconds=3.450203e-03 current_repeat_seconds=2.988522e-03 reference_v2_seconds=2.641527e-03 rebuild_max_abs_error=1.665335e-15 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+[PASS] threads=2 n=65 current_seconds=1.385000e-04 current_repeat_seconds=4.367000e-05 reference_v2_seconds=4.138000e-05 rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+[PASS] threads=2 n=129 current_seconds=2.927640e-04 current_repeat_seconds=2.841980e-04 reference_v2_seconds=2.624930e-04 rebuild_max_abs_error=1.332268e-15 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+[PASS] threads=2 n=257 current_seconds=2.161367e-03 current_repeat_seconds=2.048214e-03 reference_v2_seconds=1.759916e-03 rebuild_max_abs_error=1.665335e-15 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+[PASS] threads=4 n=65 current_seconds=2.608090e-04 current_repeat_seconds=3.651700e-05 reference_v2_seconds=4.429600e-05 rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+[PASS] threads=4 n=129 current_seconds=3.362820e-04 current_repeat_seconds=3.611560e-04 reference_v2_seconds=2.237060e-04 rebuild_max_abs_error=1.332268e-15 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+[PASS] threads=4 n=257 current_seconds=2.506258e-03 current_repeat_seconds=2.346595e-03 reference_v2_seconds=1.703408e-03 rebuild_max_abs_error=1.665335e-15 factor_max_abs_diff_vs_v2=0.000000e+00 repeat_factor_max_abs_diff=0.000000e+00
+All OpenMP consistency tests passed.

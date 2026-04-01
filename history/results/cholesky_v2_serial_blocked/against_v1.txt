@@ -1,28 +1,28 @@
-[PASS] block_size=32 n=31
-[PASS] block_size=32 n=32
-[PASS] block_size=32 n=33
-[PASS] block_size=32 n=63
-[PASS] block_size=32 n=64
-[PASS] block_size=32 n=65
-[PASS] block_size=32 n=127
-[PASS] block_size=32 n=128
-[PASS] block_size=32 n=129
-[PASS] block_size=64 n=31
-[PASS] block_size=64 n=32
-[PASS] block_size=64 n=33
-[PASS] block_size=64 n=63
-[PASS] block_size=64 n=64
-[PASS] block_size=64 n=65
-[PASS] block_size=64 n=127
-[PASS] block_size=64 n=128
-[PASS] block_size=64 n=129
-[PASS] block_size=128 n=31
-[PASS] block_size=128 n=32
-[PASS] block_size=128 n=33
-[PASS] block_size=128 n=63
-[PASS] block_size=128 n=64
-[PASS] block_size=128 n=65
-[PASS] block_size=128 n=127
-[PASS] block_size=128 n=128
-[PASS] block_size=128 n=129
+[PASS] block_size=32 n=31 current_seconds=2.892100e-05 reference_seconds=1.469800e-05 current_rebuild_max_abs_error=4.440892e-16 reference_rebuild_max_abs_error=4.440892e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=32 n=32 current_seconds=1.779100e-05 reference_seconds=1.602200e-05 current_rebuild_max_abs_error=5.551115e-16 reference_rebuild_max_abs_error=5.551115e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=32 n=33 current_seconds=2.031500e-05 reference_seconds=2.951700e-05 current_rebuild_max_abs_error=4.440892e-16 reference_rebuild_max_abs_error=4.440892e-16 factor_max_abs_diff=2.775558e-17
+[PASS] block_size=32 n=63 current_seconds=8.561900e-05 reference_seconds=8.821300e-05 current_rebuild_max_abs_error=5.551115e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=7.327472e-15
+[PASS] block_size=32 n=64 current_seconds=9.504300e-05 reference_seconds=9.523900e-05 current_rebuild_max_abs_error=6.661338e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=7.466250e-15
+[PASS] block_size=32 n=65 current_seconds=9.548400e-05 reference_seconds=9.643900e-05 current_rebuild_max_abs_error=6.661338e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=6.328271e-15
+[PASS] block_size=32 n=127 current_seconds=4.993600e-04 reference_seconds=5.379690e-04 current_rebuild_max_abs_error=1.332268e-15 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=1.287859e-14
+[PASS] block_size=32 n=128 current_seconds=4.611440e-04 reference_seconds=5.015070e-04 current_rebuild_max_abs_error=1.110223e-15 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=1.509903e-14
+[PASS] block_size=32 n=129 current_seconds=3.805860e-04 reference_seconds=4.076090e-04 current_rebuild_max_abs_error=1.332268e-15 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=1.540434e-14
+[PASS] block_size=64 n=31 current_seconds=1.165100e-05 reference_seconds=9.758000e-06 current_rebuild_max_abs_error=4.440892e-16 reference_rebuild_max_abs_error=4.440892e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=64 n=32 current_seconds=1.127800e-05 reference_seconds=1.001200e-05 current_rebuild_max_abs_error=5.551115e-16 reference_rebuild_max_abs_error=5.551115e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=64 n=33 current_seconds=1.177200e-05 reference_seconds=1.025400e-05 current_rebuild_max_abs_error=4.440892e-16 reference_rebuild_max_abs_error=4.440892e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=64 n=63 current_seconds=7.044600e-05 reference_seconds=6.795300e-05 current_rebuild_max_abs_error=6.661338e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=64 n=64 current_seconds=6.769700e-05 reference_seconds=5.500800e-05 current_rebuild_max_abs_error=6.661338e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=64 n=65 current_seconds=7.090500e-05 reference_seconds=5.576600e-05 current_rebuild_max_abs_error=6.661338e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=1.887379e-15
+[PASS] block_size=64 n=127 current_seconds=4.113000e-04 reference_seconds=3.580360e-04 current_rebuild_max_abs_error=1.221245e-15 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=1.454392e-14
+[PASS] block_size=64 n=128 current_seconds=5.891430e-04 reference_seconds=3.457470e-04 current_rebuild_max_abs_error=9.992007e-16 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=1.115774e-14
+[PASS] block_size=64 n=129 current_seconds=3.764220e-04 reference_seconds=3.195490e-04 current_rebuild_max_abs_error=1.221245e-15 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=1.421085e-14
+[PASS] block_size=128 n=31 current_seconds=9.155000e-06 reference_seconds=7.442000e-06 current_rebuild_max_abs_error=4.440892e-16 reference_rebuild_max_abs_error=4.440892e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=128 n=32 current_seconds=1.922100e-05 reference_seconds=7.583000e-06 current_rebuild_max_abs_error=5.551115e-16 reference_rebuild_max_abs_error=5.551115e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=128 n=33 current_seconds=9.288000e-06 reference_seconds=8.255000e-06 current_rebuild_max_abs_error=4.440892e-16 reference_rebuild_max_abs_error=4.440892e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=128 n=63 current_seconds=5.522000e-05 reference_seconds=4.473700e-05 current_rebuild_max_abs_error=6.661338e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=128 n=64 current_seconds=5.466400e-05 reference_seconds=4.268300e-05 current_rebuild_max_abs_error=6.661338e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=128 n=65 current_seconds=5.674700e-05 reference_seconds=4.517000e-05 current_rebuild_max_abs_error=6.661338e-16 reference_rebuild_max_abs_error=6.661338e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=128 n=127 current_seconds=4.565900e-04 reference_seconds=2.876010e-04 current_rebuild_max_abs_error=9.992007e-16 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=128 n=128 current_seconds=1.669398e-03 reference_seconds=2.806770e-04 current_rebuild_max_abs_error=9.992007e-16 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=0.000000e+00
+[PASS] block_size=128 n=129 current_seconds=4.340300e-04 reference_seconds=2.606280e-04 current_rebuild_max_abs_error=9.992007e-16 reference_rebuild_max_abs_error=9.992007e-16 factor_max_abs_diff=3.635980e-15
 All v2-v1 regression tests passed.

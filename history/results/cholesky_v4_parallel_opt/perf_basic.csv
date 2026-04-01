@@ -1,0 +1,73 @@
+status,event,n,count,unit,runtime_ns,enabled_pct,metric_value,metric_unit
+ok,cycles:u,128,18205682,,30878795,100.00,,
+
+ok,instructions:u,128,22855693,,30878795,100.00,1.26,insn per cycle
+
+ok,cache-references:u,128,356221,,30878795,100.00,,
+
+ok,cache-misses:u,128,227398,,30878795,100.00,63.836,of all cache refs
+
+ok,cycles:u,256,94903924,,83725097,100.00,,
+
+ok,instructions:u,256,126630712,,83725097,100.00,1.33,insn per cycle
+
+ok,cache-references:u,256,2718595,,83725097,100.00,,
+
+ok,cache-misses:u,256,1708202,,83725097,100.00,62.834,of all cache refs
+
+ok,cycles:u,512,564442586,,253245168,100.00,,
+
+ok,instructions:u,512,888177803,,253245168,100.00,1.57,insn per cycle
+
+ok,cache-references:u,512,10609670,,253245168,100.00,,
+
+ok,cache-misses:u,512,6464358,,253245168,100.00,60.929,of all cache refs
+
+ok,cycles:u,1000,2410445542,,781719048,100.00,,
+
+ok,instructions:u,1000,6197464960,,781719048,100.00,2.57,insn per cycle
+
+ok,cache-references:u,1000,23947653,,781719048,100.00,,
+
+ok,cache-misses:u,1000,10681285,,781719048,100.00,44.603,of all cache refs
+
+ok,cycles:u,1024,3225420291,,976908917,100.00,,
+
+ok,instructions:u,1024,6675922936,,976908917,100.00,2.07,insn per cycle
+
+ok,cache-references:u,1024,81851867,,976908917,100.00,,
+
+ok,cache-misses:u,1024,27024237,,976908917,100.00,33.016,of all cache refs
+
+ok,cycles:u,1536,8247023172,,2445002856,100.00,,
+
+ok,instructions:u,1536,22070611564,,2445002856,100.00,2.68,insn per cycle
+
+ok,cache-references:u,1536,251433467,,2445002856,100.00,,
+
+ok,cache-misses:u,1536,6432108,,2445002856,100.00,2.558,of all cache refs
+
+ok,cycles:u,1792,12413582738,,3648547469,100.00,,
+
+ok,instructions:u,1792,34816835525,,3648547469,100.00,2.80,insn per cycle
+
+ok,cache-references:u,1792,377702072,,3648547469,100.00,,
+
+ok,cache-misses:u,1792,9813171,,3648547469,100.00,2.598,of all cache refs
+
+ok,cycles:u,2048,22033613649,,6672948455,100.00,,
+
+ok,instructions:u,2048,51838019893,,6672948455,100.00,2.35,insn per cycle
+
+ok,cache-references:u,2048,637150366,,6672948455,100.00,,
+
+ok,cache-misses:u,2048,181613106,,6672948455,100.00,28.504,of all cache refs
+
+ok,cycles:u,2304,27548901821,,8060125796,100.00,,
+
+ok,instructions:u,2304,73488522433,,8060125796,100.00,2.67,insn per cycle
+
+ok,cache-references:u,2304,805158404,,8060125796,100.00,,
+
+ok,cache-misses:u,2304,205022874,,8060125796,100.00,25.464,of all cache refs
+

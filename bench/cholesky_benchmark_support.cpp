@@ -4,12 +4,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <numeric>
 #include <ostream>
 #include <vector>
 
 namespace {
 
+// Builds the deterministic SPD correlation matrix used by the benchmark suite.
 std::vector<double> make_corr_matrix(int n) {
     std::vector<double> matrix(static_cast<std::size_t>(n) * static_cast<std::size_t>(n), 0.0);
 
@@ -25,6 +27,7 @@ std::vector<double> make_corr_matrix(int n) {
     return matrix;
 }
 
+// Computes the median timing from a non-empty timing vector.
 double median(std::vector<double> values) {
     std::sort(values.begin(), values.end());
 
@@ -36,18 +39,49 @@ double median(std::vector<double> values) {
     return values[middle];
 }
 
+// Estimates the textbook flop count for dense Cholesky factorization.
 double estimate_cholesky_flops(int n) {
     const double dimension = static_cast<double>(n);
     return dimension * dimension * dimension / 3.0;
 }
 
+// Returns the dense matrix footprint in bytes for a square double matrix.
 double estimate_matrix_bytes(int n) {
     const double dimension = static_cast<double>(n);
     return dimension * dimension * static_cast<double>(sizeof(double));
 }
 
+// Reads the requested OpenMP thread count for result metadata.
+int resolve_requested_threads() {
+    const char* value = std::getenv("OMP_NUM_THREADS");
+    if (value == nullptr) {
+        return 1;
+    }
+
+    const int parsed = std::atoi(value);
+    return parsed > 0 ? parsed : 1;
+}
+
+// Reads the kernel schedule name recorded in benchmark metadata.
+std::string resolve_omp_schedule() {
+    const char* value = std::getenv("CHOLESKY_OMP_SCHEDULE");
+    return value != nullptr ? std::string(value) : "static";
+}
+
+// Reads the OpenMP chunk size recorded in benchmark metadata.
+int resolve_omp_chunk() {
+    const char* value = std::getenv("CHOLESKY_OMP_CHUNK");
+    if (value == nullptr) {
+        return 0;
+    }
+
+    const int parsed = std::atoi(value);
+    return parsed > 0 ? parsed : 0;
+}
+
 }  // namespace
 
+// Validates the benchmark configuration before any allocation or execution.
 bool validate_benchmark_config(const CholeskyBenchmarkConfig& config, std::ostream& err) {
     if (config.n <= 0 || config.repetitions <= 0 || config.warmup < 0) {
         err << "invalid benchmark config: n > 0, repetitions > 0, warmup >= 0 required\n";
@@ -57,11 +91,14 @@ bool validate_benchmark_config(const CholeskyBenchmarkConfig& config, std::ostre
     return true;
 }
 
+// Runs repeated Cholesky benchmark trials on a deterministic SPD matrix.
 CholeskyBenchmarkResult run_cholesky_benchmark(const CholeskyBenchmarkConfig& config, std::ostream& err) {
     CholeskyBenchmarkResult result;
     result.label = config.label;
     result.n = config.n;
-    result.requested_threads = 1;
+    result.requested_threads = resolve_requested_threads();
+    result.omp_schedule = resolve_omp_schedule();
+    result.omp_chunk = resolve_omp_chunk();
     result.repetitions = config.repetitions;
     result.warmup = config.warmup;
 
@@ -113,6 +150,7 @@ CholeskyBenchmarkResult run_cholesky_benchmark(const CholeskyBenchmarkConfig& co
     return result;
 }
 
+// Writes one human-readable benchmark result bundle.
 void write_benchmark_result(std::ostream& out, const CholeskyBenchmarkResult& result) {
     out.setf(std::ios::fixed);
     out.precision(9);
@@ -120,6 +158,8 @@ void write_benchmark_result(std::ostream& out, const CholeskyBenchmarkResult& re
     out << "generator=" << result.generator << '\n';
     out << "n=" << result.n << '\n';
     out << "requested_threads=" << result.requested_threads << '\n';
+    out << "omp_schedule=" << result.omp_schedule << '\n';
+    out << "omp_chunk=" << result.omp_chunk << '\n';
     out << "repetitions=" << result.repetitions << '\n';
     out << "warmup=" << result.warmup << '\n';
     for (std::size_t index = 0; index < result.times.size(); ++index) {
@@ -135,11 +175,13 @@ void write_benchmark_result(std::ostream& out, const CholeskyBenchmarkResult& re
     out << "matrix_mib=" << result.matrix_mib << '\n';
 }
 
+// Writes the CSV header shared by all benchmark sweep tables.
 void write_benchmark_csv_header(std::ostream& out) {
-    out << "sweep,label,generator,n,requested_threads,repetitions,warmup,min_seconds,median_seconds,mean_seconds,max_seconds,"
+    out << "sweep,label,generator,n,requested_threads,omp_schedule,omp_chunk,repetitions,warmup,min_seconds,median_seconds,mean_seconds,max_seconds,"
            "estimated_flops,median_gflops,matrix_bytes,matrix_mib\n";
 }
 
+// Appends one structured benchmark row to a CSV sweep file.
 void write_benchmark_csv_row(std::ostream& out, const std::string& sweep, const CholeskyBenchmarkResult& result) {
     out.setf(std::ios::fixed);
     out.precision(9);
@@ -148,6 +190,8 @@ void write_benchmark_csv_row(std::ostream& out, const std::string& sweep, const 
         << result.generator << ','
         << result.n << ','
         << result.requested_threads << ','
+        << result.omp_schedule << ','
+        << result.omp_chunk << ','
         << result.repetitions << ','
         << result.warmup << ','
         << result.min_seconds << ','

@@ -209,8 +209,8 @@ int main(int argc, char** argv) {
     int failures = 0;
     int total = 0;
 
-    const std::vector<int> threads_to_check = {1, 2, 4};
-    const std::vector<int> sizes = {65, 129, 257};
+    const std::vector<int> threads_to_check = {4, 16, 32};
+    const std::vector<int> sizes = {257, 513, 1024};
 
     for (const int threads : threads_to_check) {
         for (const int n : sizes) {

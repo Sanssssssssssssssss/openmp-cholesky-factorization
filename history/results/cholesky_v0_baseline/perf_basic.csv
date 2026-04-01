@@ -1,41 +1,73 @@
 status,event,n,count,unit,runtime_ns,enabled_pct,metric_value,metric_unit
-ok,cycles:u,128,55499474,,31544352,100.00,,
+ok,cycles:u,128,56475458,,30093740,100.00,,
 
-ok,instructions:u,128,37046267,,31544352,100.00,0.67,insn per cycle
+ok,instructions:u,128,55269973,,30093740,100.00,0.98,insn per cycle
 
-ok,cache-references:u,128,24641,,31544352,100.00,,
+ok,cache-references:u,128,26940,,30093740,100.00,,
 
-ok,cache-misses:u,128,11517,,31544352,100.00,46.739,of all cache refs
+ok,cache-misses:u,128,11042,,30093740,100.00,40.987,of all cache refs
 
-ok,cycles:u,256,537625102,,169086080,100.00,,
+ok,cycles:u,256,535458178,,158903590,100.00,,
 
-ok,instructions:u,256,269139456,,169086080,100.00,0.50,insn per cycle
+ok,instructions:u,256,413785056,,158903590,100.00,0.77,insn per cycle
 
-ok,cache-references:u,256,100214,,169086080,100.00,,
+ok,cache-references:u,256,92131,,158903590,100.00,,
 
-ok,cache-misses:u,256,11976,,169086080,100.00,11.950,of all cache refs
+ok,cache-misses:u,256,12563,,158903590,100.00,13.636,of all cache refs
 
-ok,cycles:u,512,7395388234,,2066478252,100.00,,
+ok,cycles:u,512,7365779958,,2040784962,100.00,,
 
-ok,instructions:u,512,2097706126,,2066478252,100.00,0.28,insn per cycle
+ok,instructions:u,512,3257026315,,2040784962,100.00,0.44,insn per cycle
 
-ok,cache-references:u,512,537822977,,2066478252,100.00,,
+ok,cache-references:u,512,544313978,,2040784962,100.00,,
 
-ok,cache-misses:u,512,268238,,2066478252,100.00,0.050,of all cache refs
+ok,cache-misses:u,512,370255,,2040784962,100.00,0.068,of all cache refs
 
-ok,cycles:u,1000,12966808850,,3794297833,100.00,,
+ok,cycles:u,1000,12983958354,,3662429261,100.00,,
 
-ok,instructions:u,1000,15477058941,,3794297833,100.00,1.19,insn per cycle
+ok,instructions:u,1000,24128120126,,3662429261,100.00,1.86,insn per cycle
 
-ok,cache-references:u,1000,336558563,,3794297833,100.00,,
+ok,cache-references:u,1000,328747147,,3662429261,100.00,,
 
-ok,cache-misses:u,1000,1138351,,3794297833,100.00,0.338,of all cache refs
+ok,cache-misses:u,1000,1601488,,3662429261,100.00,0.487,of all cache refs
 
-ok,cycles:u,1024,59009571266,,16519132915,100.00,,
+ok,cycles:u,1024,61795844219,,16938949305,100.00,,
 
-ok,instructions:u,1024,16614635087,,16519132915,100.00,0.28,insn per cycle
+ok,instructions:u,1024,25904000819,,16938949305,100.00,0.42,insn per cycle
 
-ok,cache-references:u,1024,5038933437,,16519132915,100.00,,
+ok,cache-references:u,1024,5166521892,,16938949305,100.00,,
 
-ok,cache-misses:u,1024,2156614,,16519132915,100.00,0.043,of all cache refs
+ok,cache-misses:u,1024,1867685,,16938949305,100.00,0.036,of all cache refs
+
+ok,cycles:u,1536,208350900561,,57830005439,100.00,,
+
+ok,instructions:u,1536,87287757393,,57830005439,100.00,0.42,insn per cycle
+
+ok,cache-references:u,1536,19151367252,,57830005439,100.00,,
+
+ok,cache-misses:u,1536,29113684,,57830005439,100.00,0.152,of all cache refs
+
+ok,cycles:u,1792,351078405090,,99230259582,100.00,,
+
+ok,instructions:u,1792,138537210865,,99230259582,100.00,0.39,insn per cycle
+
+ok,cache-references:u,1792,29516258172,,99230259582,100.00,,
+
+ok,cache-misses:u,1792,787091150,,99230259582,100.00,2.667,of all cache refs
+
+ok,cycles:u,2048,602286760829,,169064023240,100.00,,
+
+ok,instructions:u,2048,206715383435,,169064023240,100.00,0.34,insn per cycle
+
+ok,cache-references:u,2048,49978466373,,169064023240,100.00,,
+
+ok,cache-misses:u,2048,1135033933,,169064023240,100.00,2.271,of all cache refs
+
+ok,cycles:u,2304,706380733153,,194996470251,100.00,,
+
+ok,instructions:u,2304,294238197018,,194996470251,100.00,0.42,insn per cycle
+
+ok,cache-references:u,2304,64030308855,,194996470251,100.00,,
+
+ok,cache-misses:u,2304,1065090492,,194996470251,100.00,1.663,of all cache refs
 

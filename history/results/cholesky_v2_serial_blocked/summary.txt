@@ -2,4 +2,4 @@ label=cholesky_v2_serial_blocked
 repetitions=7
 warmup=1
 correctness=passed
-files=correctness.txt,time_coarse.txt,time_fine.txt,time_large.txt,sweeps.csv,metadata.txt,perf_basic.txt,perf_basic.csv
+files=correctness.txt,against_v1.txt,stability.txt,omp_consistency.txt,time_coarse.txt,time_fine.txt,time_large.txt,thread_scaling.txt,thread_scaling.csv,schedule_study.txt,schedule_study.csv,sweeps.csv,metadata.txt,perf_basic.txt,perf_basic.csv

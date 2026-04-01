@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -61,6 +62,17 @@ std::string sibling_executable_path_from_suite_path(const char* argv0,
     return executable_path.string();
 }
 
+std::string suite_name_from_path(const char* argv0) {
+    return std::filesystem::path(argv0).filename().string();
+}
+
+bool suite_supports_openmp_studies(const char* argv0) {
+    const std::string suite_name = suite_name_from_path(argv0);
+    return suite_name == "cholesky_benchmark_suite" ||
+           suite_name == "cholesky_v3_openmp_benchmark_suite" ||
+           suite_name == "cholesky_v4_parallel_opt_benchmark_suite";
+}
+
 std::string now_utc_iso8601() {
     const auto now = std::chrono::system_clock::now();
     const std::time_t time_value = std::chrono::system_clock::to_time_t(now);
@@ -96,6 +108,82 @@ bool perf_available() {
     return status == 0;
 }
 
+int current_or_default_int(const char* name, int fallback) {
+    const char* value = std::getenv(name);
+    if (value == nullptr) {
+        return fallback;
+    }
+
+    const int parsed = std::atoi(value);
+    return parsed > 0 ? parsed : fallback;
+}
+
+std::vector<int> parse_int_list(const std::string& value) {
+    std::string normalized = value;
+    for (char& ch : normalized) {
+        if (ch == ',' || ch == ';' || ch == ':') {
+            ch = ' ';
+        }
+    }
+
+    std::vector<int> parsed_values;
+    std::stringstream stream(normalized);
+    int parsed = 0;
+    while (stream >> parsed) {
+        if (parsed > 0) {
+            parsed_values.push_back(parsed);
+        }
+    }
+
+    return parsed_values;
+}
+
+std::vector<int> current_or_default_int_list(const char* name, const std::vector<int>& fallback) {
+    const char* value = std::getenv(name);
+    if (value == nullptr) {
+        return fallback;
+    }
+
+    const std::vector<int> parsed_values = parse_int_list(value);
+    return parsed_values.empty() ? fallback : parsed_values;
+}
+
+class ScopedEnvironmentOverride {
+  public:
+    ScopedEnvironmentOverride(const char* name, const std::optional<std::string>& value)
+        : name_(name) {
+        const char* current = std::getenv(name_);
+        if (current != nullptr) {
+            had_previous_ = true;
+            previous_value_ = current;
+        }
+
+        if (value.has_value()) {
+            setenv(name_, value->c_str(), 1);
+        } else {
+            unsetenv(name_);
+        }
+    }
+
+    ~ScopedEnvironmentOverride() {
+        if (had_previous_) {
+            setenv(name_, previous_value_.c_str(), 1);
+        } else {
+            unsetenv(name_);
+        }
+    }
+
+  private:
+    const char* name_;
+    bool had_previous_ = false;
+    std::string previous_value_;
+};
+
+struct ScheduleStudyCase {
+    std::string schedule;
+    int chunk = 0;
+};
+
 void write_metadata_file(const std::filesystem::path& output_path,
                          const std::string& label,
                          const std::string& suite_path,
@@ -111,7 +199,21 @@ void write_metadata_file(const std::filesystem::path& output_path,
     const char* omp_threads = std::getenv("OMP_NUM_THREADS");
     const char* omp_places = std::getenv("OMP_PLACES");
     const char* omp_proc_bind = std::getenv("OMP_PROC_BIND");
+    const char* slurm_job_partition = std::getenv("SLURM_JOB_PARTITION");
+    const char* slurmd_nodename = std::getenv("SLURMD_NODENAME");
+    const char* slurm_nodelist = std::getenv("SLURM_NODELIST");
     const char* cholesky_block_size = std::getenv("CHOLESKY_BLOCK_SIZE");
+    const char* cholesky_omp_schedule = std::getenv("CHOLESKY_OMP_SCHEDULE");
+    const char* cholesky_omp_chunk = std::getenv("CHOLESKY_OMP_CHUNK");
+    const char* schedule_study_n = std::getenv("CHOLESKY_SCHEDULE_STUDY_N");
+    const char* schedule_study_threads = std::getenv("CHOLESKY_SCHEDULE_STUDY_THREADS");
+    const char* coarse_sizes = std::getenv("CHOLESKY_COARSE_SIZES");
+    const char* fine_sizes = std::getenv("CHOLESKY_FINE_SIZES");
+    const char* large_sizes = std::getenv("CHOLESKY_LARGE_SIZES");
+    const char* perf_sizes = std::getenv("CHOLESKY_PERF_SIZES");
+    const char* thread_scaling_counts = std::getenv("CHOLESKY_THREAD_SCALING_COUNTS");
+    const char* thread_scaling_extended_sizes = std::getenv("CHOLESKY_THREAD_SCALING_EXTENDED_SIZES");
+    const char* thread_scaling_extended_counts = std::getenv("CHOLESKY_THREAD_SCALING_EXTENDED_COUNTS");
 
     file << "label=" << label << '\n';
     file << "timestamp_utc=" << now_utc_iso8601() << '\n';
@@ -127,7 +229,23 @@ void write_metadata_file(const std::filesystem::path& output_path,
     file << "omp_num_threads=" << (omp_threads != nullptr ? omp_threads : "unset") << '\n';
     file << "omp_places=" << (omp_places != nullptr ? omp_places : "unset") << '\n';
     file << "omp_proc_bind=" << (omp_proc_bind != nullptr ? omp_proc_bind : "unset") << '\n';
+    file << "slurm_job_partition=" << (slurm_job_partition != nullptr ? slurm_job_partition : "unset") << '\n';
+    file << "slurmd_nodename=" << (slurmd_nodename != nullptr ? slurmd_nodename : "unset") << '\n';
+    file << "slurm_nodelist=" << (slurm_nodelist != nullptr ? slurm_nodelist : "unset") << '\n';
     file << "cholesky_block_size=" << (cholesky_block_size != nullptr ? cholesky_block_size : "unset") << '\n';
+    file << "cholesky_omp_schedule=" << (cholesky_omp_schedule != nullptr ? cholesky_omp_schedule : "static") << '\n';
+    file << "cholesky_omp_chunk=" << (cholesky_omp_chunk != nullptr ? cholesky_omp_chunk : "0") << '\n';
+    file << "schedule_study_n=" << (schedule_study_n != nullptr ? schedule_study_n : "1024") << '\n';
+    file << "schedule_study_threads=" << (schedule_study_threads != nullptr ? schedule_study_threads : "4") << '\n';
+    file << "coarse_sizes=" << (coarse_sizes != nullptr ? coarse_sizes : "default") << '\n';
+    file << "fine_sizes=" << (fine_sizes != nullptr ? fine_sizes : "default") << '\n';
+    file << "large_sizes=" << (large_sizes != nullptr ? large_sizes : "default") << '\n';
+    file << "perf_sizes=" << (perf_sizes != nullptr ? perf_sizes : "default") << '\n';
+    file << "thread_scaling_counts=" << (thread_scaling_counts != nullptr ? thread_scaling_counts : "default") << '\n';
+    file << "thread_scaling_extended_sizes="
+         << (thread_scaling_extended_sizes != nullptr ? thread_scaling_extended_sizes : "default") << '\n';
+    file << "thread_scaling_extended_counts="
+         << (thread_scaling_extended_counts != nullptr ? thread_scaling_extended_counts : "default") << '\n';
     file << "perf_available=" << (perf_is_available ? "yes" : "no") << '\n';
     file << "perf_events=cycles,instructions,cache-references,cache-misses\n";
 }
@@ -345,6 +463,169 @@ bool run_thread_scaling_sweep(const std::filesystem::path& text_output_path,
     return true;
 }
 
+bool run_thread_scaling_extended_sweep(const std::filesystem::path& text_output_path,
+                                       const std::filesystem::path& csv_output_path,
+                                       const std::vector<int>& sizes,
+                                       const std::vector<int>& thread_counts,
+                                       int repetitions,
+                                       int warmup,
+                                       const std::string& label) {
+    std::ofstream text_file(text_output_path);
+    std::ofstream csv_file(csv_output_path);
+    if (!text_file || !csv_file) {
+        std::cerr << "failed to open extended thread scaling outputs\n";
+        return false;
+    }
+
+    write_benchmark_csv_header(csv_file);
+
+    text_file << "sizes=";
+    for (std::size_t index = 0; index < sizes.size(); ++index) {
+        if (index != 0) {
+            text_file << ',';
+        }
+        text_file << sizes[index];
+    }
+    text_file << '\n';
+
+    text_file << "thread_counts=";
+    for (std::size_t index = 0; index < thread_counts.size(); ++index) {
+        if (index != 0) {
+            text_file << ',';
+        }
+        text_file << thread_counts[index];
+    }
+    text_file << "\n\n";
+
+#ifdef _OPENMP
+    const int previous_dynamic = omp_get_dynamic();
+    const int previous_max_threads = omp_get_max_threads();
+    omp_set_dynamic(0);
+#endif
+
+    for (const int n : sizes) {
+        std::cout << "[INFO] Running extended thread scaling sweep for n=" << n << '\n';
+        for (const int requested_threads : thread_counts) {
+            CholeskyBenchmarkConfig config;
+            config.n = n;
+            config.repetitions = repetitions;
+            config.warmup = warmup;
+            config.label =
+                label + "_thread_ext_n" + std::to_string(n) + "_t" + std::to_string(requested_threads);
+
+#ifdef _OPENMP
+            omp_set_num_threads(requested_threads);
+#endif
+
+            std::cerr.clear();
+            CholeskyBenchmarkResult result = run_cholesky_benchmark(config, std::cerr);
+            if (result.min_seconds < 0.0) {
+#ifdef _OPENMP
+                omp_set_num_threads(previous_max_threads);
+                omp_set_dynamic(previous_dynamic);
+#endif
+                return false;
+            }
+
+            result.requested_threads = requested_threads;
+            text_file << "===== n=" << n << " threads=" << requested_threads << '\n';
+            write_benchmark_result(text_file, result);
+            text_file << '\n';
+            write_benchmark_csv_row(csv_file,
+                                    "thread_scaling_extended_n" + std::to_string(n),
+                                    result);
+
+            std::cout << "[INFO] extended threads=" << requested_threads
+                      << " n=" << n
+                      << " median_seconds=" << result.median_seconds
+                      << " median_gflops=" << result.median_gflops << '\n';
+        }
+    }
+
+#ifdef _OPENMP
+    omp_set_num_threads(previous_max_threads);
+    omp_set_dynamic(previous_dynamic);
+#endif
+
+    return true;
+}
+
+bool run_schedule_study(const std::filesystem::path& text_output_path,
+                        const std::filesystem::path& csv_output_path,
+                        int n,
+                        int requested_threads,
+                        const std::vector<ScheduleStudyCase>& study_cases,
+                        int repetitions,
+                        int warmup,
+                        const std::string& label) {
+    std::ofstream text_file(text_output_path);
+    std::ofstream csv_file(csv_output_path);
+    if (!text_file || !csv_file) {
+        std::cerr << "failed to open schedule study outputs\n";
+        return false;
+    }
+
+    write_benchmark_csv_header(csv_file);
+    text_file << "n=" << n << '\n';
+    text_file << "requested_threads=" << requested_threads << '\n';
+
+#ifdef _OPENMP
+    const int previous_dynamic = omp_get_dynamic();
+    const int previous_max_threads = omp_get_max_threads();
+    // Disable dynamic team resizing so schedule comparisons reuse a fixed team size on the same problem size.
+    omp_set_dynamic(0);
+    // Force a fixed team size so schedule and chunk-size comparisons isolate runtime policy rather than thread-count drift.
+    omp_set_num_threads(requested_threads);
+#endif
+
+    ScopedEnvironmentOverride thread_override("OMP_NUM_THREADS", std::to_string(requested_threads));
+
+    for (const ScheduleStudyCase& study_case : study_cases) {
+        ScopedEnvironmentOverride schedule_override("CHOLESKY_OMP_SCHEDULE", study_case.schedule);
+        ScopedEnvironmentOverride chunk_override(
+            "CHOLESKY_OMP_CHUNK",
+            study_case.chunk > 0 ? std::optional<std::string>(std::to_string(study_case.chunk))
+                                 : std::optional<std::string>("0"));
+
+        CholeskyBenchmarkConfig config;
+        config.n = n;
+        config.repetitions = repetitions;
+        config.warmup = warmup;
+        config.label = label + "_" + study_case.schedule +
+                       (study_case.chunk > 0 ? "_c" + std::to_string(study_case.chunk) : "_default");
+
+        std::cerr.clear();
+        CholeskyBenchmarkResult result = run_cholesky_benchmark(config, std::cerr);
+        if (result.min_seconds < 0.0) {
+#ifdef _OPENMP
+            omp_set_num_threads(previous_max_threads);
+            omp_set_dynamic(previous_dynamic);
+#endif
+            return false;
+        }
+
+        result.requested_threads = requested_threads;
+        text_file << "===== schedule=" << study_case.schedule << " chunk=" << study_case.chunk << '\n';
+        write_benchmark_result(text_file, result);
+        text_file << '\n';
+        write_benchmark_csv_row(csv_file, "schedule_study", result);
+
+        std::cout << "[INFO] schedule=" << study_case.schedule
+                  << " chunk=" << study_case.chunk
+                  << " threads=" << requested_threads
+                  << " n=" << n
+                  << " median_seconds=" << result.median_seconds
+                  << " median_gflops=" << result.median_gflops << '\n';
+    }
+
+#ifdef _OPENMP
+    omp_set_num_threads(previous_max_threads);
+    omp_set_dynamic(previous_dynamic);
+#endif
+
+    return true;
+}
+
 bool run_optional_report_test(const std::string& executable_path,
                               const std::filesystem::path& report_path,
                               const std::string& display_name) {
@@ -379,6 +660,7 @@ int main(int argc, char** argv) {
 
     const std::filesystem::path output_dir = std::filesystem::path("history") / "results" / label;
     std::filesystem::create_directories(output_dir);
+    const bool supports_openmp_studies = suite_supports_openmp_studies(argv[0]);
     const std::string benchmark_path = benchmark_path_from_suite_path(argv[0]);
     const std::string against_v1_test_path =
         sibling_executable_path_from_suite_path(argv[0], "cholesky_against_v1_tests");
@@ -447,10 +729,35 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    const std::vector<int> coarse_sizes = {1, 2, 4, 8, 10, 16, 32, 64, 100, 124, 127, 128, 129, 255, 256, 257, 511, 512, 513, 1000, 1024};
-    const std::vector<int> fine_sizes = {992, 1000, 1008, 1013, 1023, 1024, 1025, 1032};
-    const std::vector<int> large_sizes = {1152, 1280};
-    const std::vector<int> thread_scaling_counts = {1, 2, 4, 16, 32};
+    const std::vector<int> coarse_sizes = current_or_default_int_list(
+        "CHOLESKY_COARSE_SIZES",
+        {1, 2, 4, 8, 10, 16, 32, 64, 100, 124, 127, 128, 129, 255, 256, 257, 511, 512, 513, 1000, 1024});
+    const std::vector<int> fine_sizes = current_or_default_int_list(
+        "CHOLESKY_FINE_SIZES",
+        {992, 1000, 1008, 1013, 1023, 1024, 1025, 1032});
+    const std::vector<int> large_sizes = current_or_default_int_list(
+        "CHOLESKY_LARGE_SIZES",
+        {1152, 1280, 1536, 1792, 2048, 2304});
+    const std::vector<int> thread_scaling_counts = current_or_default_int_list(
+        "CHOLESKY_THREAD_SCALING_COUNTS",
+        {1, 2, 4, 16, 32});
+    const std::vector<int> thread_scaling_extended_sizes = current_or_default_int_list(
+        "CHOLESKY_THREAD_SCALING_EXTENDED_SIZES",
+        {256, 1024, 2048});
+    const std::vector<int> thread_scaling_extended_counts = current_or_default_int_list(
+        "CHOLESKY_THREAD_SCALING_EXTENDED_COUNTS",
+        {1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 64});
+    const int schedule_study_threads = current_or_default_int("CHOLESKY_SCHEDULE_STUDY_THREADS", 4);
+    const int schedule_study_n = current_or_default_int("CHOLESKY_SCHEDULE_STUDY_N", 1024);
+    const std::vector<ScheduleStudyCase> schedule_study_cases = {
+        {"static", 0},
+        {"static", 1},
+        {"static", 8},
+        {"dynamic", 1},
+        {"dynamic", 8},
+        {"guided", 1},
+        {"guided", 8},
+    };
 
     if (!run_and_record_sweep(output_dir / "time_coarse.txt",
                               csv_file,
@@ -482,17 +789,42 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (!run_thread_scaling_sweep(output_dir / "thread_scaling.txt",
-                                  output_dir / "thread_scaling.csv",
-                                  1024,
-                                  thread_scaling_counts,
-                                  repetitions,
-                                  warmup,
-                                  label)) {
-        return 1;
+    if (supports_openmp_studies) {
+        if (!run_thread_scaling_sweep(output_dir / "thread_scaling.txt",
+                                      output_dir / "thread_scaling.csv",
+                                      1024,
+                                      thread_scaling_counts,
+                                      repetitions,
+                                      warmup,
+                                      label)) {
+            return 1;
+        }
+
+        if (!run_thread_scaling_extended_sweep(output_dir / "thread_scaling_extended.txt",
+                                               output_dir / "thread_scaling_extended.csv",
+                                               thread_scaling_extended_sizes,
+                                               thread_scaling_extended_counts,
+                                               repetitions,
+                                               warmup,
+                                               label)) {
+            return 1;
+        }
+
+        if (!run_schedule_study(output_dir / "schedule_study.txt",
+                                output_dir / "schedule_study.csv",
+                                schedule_study_n,
+                                schedule_study_threads,
+                                schedule_study_cases,
+                                repetitions,
+                                warmup,
+                                label)) {
+            return 1;
+        }
     }
 
-    const std::vector<int> perf_sizes = {128, 256, 512, 1000, 1024};
+    const std::vector<int> perf_sizes = current_or_default_int_list(
+        "CHOLESKY_PERF_SIZES",
+        {128, 256, 512, 1000, 1024, 1536, 1792, 2048, 2304});
     if (!benchmark_path.empty()) {
         if (!collect_perf_stat(output_dir / "perf_basic.txt",
                                output_dir / "perf_basic.csv",
@@ -526,7 +858,11 @@ int main(int argc, char** argv) {
     summary_file << "repetitions=" << repetitions << '\n';
     summary_file << "warmup=" << warmup << '\n';
     summary_file << "correctness=passed\n";
-    summary_file << "files=correctness.txt,against_v1.txt,stability.txt,omp_consistency.txt,time_coarse.txt,time_fine.txt,time_large.txt,thread_scaling.txt,thread_scaling.csv,sweeps.csv,metadata.txt,perf_basic.txt,perf_basic.csv\n";
+    summary_file << "files=correctness.txt,against_v1.txt,stability.txt,omp_consistency.txt,time_coarse.txt,time_fine.txt,time_large.txt";
+    if (supports_openmp_studies) {
+        summary_file << ",thread_scaling.txt,thread_scaling.csv,thread_scaling_extended.txt,thread_scaling_extended.csv,schedule_study.txt,schedule_study.csv";
+    }
+    summary_file << ",sweeps.csv,metadata.txt,perf_basic.txt,perf_basic.csv,reference_logdet.txt,reference_logdet.csv\n";
 
     std::cout << "[INFO] Wrote suite results to " << output_dir << '\n';
     return 0;

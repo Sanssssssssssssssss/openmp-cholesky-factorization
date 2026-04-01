@@ -1,44 +1,76 @@
-benchmark=/home/cx272/c2_coursework/./build-release/cholesky_benchmark
+benchmark=/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark
 events=cycles,instructions,cache-references,cache-misses
 repetitions=7
 warmup=1
 ===== n=128
-command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 128 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
-8443867,,cycles:u,14406740,100.00,,
-22220001,,instructions:u,14406740,100.00,2.63,insn per cycle
-21321,,cache-references:u,14406740,100.00,,
-10497,,cache-misses:u,14406740,100.00,49.233,of all cache refs
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 128 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+27286849,,cycles:u,31807571,100.00,,
+23726100,,instructions:u,31807571,100.00,0.87,insn per cycle
+407741,,cache-references:u,31807571,100.00,,
+13351,,cache-misses:u,31807571,100.00,3.274,of all cache refs
 exit_status=0
 
 ===== n=256
-command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 256 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
-49355390,,cycles:u,23011320,100.00,,
-133340418,,instructions:u,23011320,100.00,2.70,insn per cycle
-62113,,cache-references:u,23011320,100.00,,
-8533,,cache-misses:u,23011320,100.00,13.738,of all cache refs
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 256 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+207136611,,cycles:u,103378126,100.00,,
+144957951,,instructions:u,103378126,100.00,0.70,insn per cycle
+4537789,,cache-references:u,103378126,100.00,,
+2244375,,cache-misses:u,103378126,100.00,49.460,of all cache refs
 exit_status=0
 
 ===== n=512
-command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 512 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
-364655540,,cycles:u,125573214,100.00,,
-979254632,,instructions:u,125573214,100.00,2.69,insn per cycle
-3154664,,cache-references:u,125573214,100.00,,
-172233,,cache-misses:u,125573214,100.00,5.460,of all cache refs
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 512 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+1267372320,,cycles:u,403684131,100.00,,
+1063259830,,instructions:u,403684131,100.00,0.84,insn per cycle
+14151199,,cache-references:u,403684131,100.00,,
+7302138,,cache-misses:u,403684131,100.00,51.601,of all cache refs
 exit_status=0
 
 ===== n=1000
-command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 1000 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
-2418634759,,cycles:u,682989885,100.00,,
-7072599953,,instructions:u,682989885,100.00,2.92,insn per cycle
-12856626,,cache-references:u,682989885,100.00,,
-263255,,cache-misses:u,682989885,100.00,2.048,of all cache refs
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 1000 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+5074126406,,cycles:u,1459209132,100.00,,
+7391089501,,instructions:u,1459209132,100.00,1.46,insn per cycle
+16394365,,cache-references:u,1459209132,100.00,,
+264757,,cache-misses:u,1459209132,100.00,1.615,of all cache refs
 exit_status=0
 
 ===== n=1024
-command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 1024 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
-2794423965,,cycles:u,787938643,100.00,,
-7588765269,,instructions:u,787938643,100.00,2.72,insn per cycle
-65003724,,cache-references:u,787938643,100.00,,
-49541,,cache-misses:u,787938643,100.00,0.076,of all cache refs
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 1024 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+7753511773,,cycles:u,2189383294,100.00,,
+8080108983,,instructions:u,2189383294,100.00,1.04,insn per cycle
+68586811,,cache-references:u,2189383294,100.00,,
+36187883,,cache-misses:u,2189383294,100.00,52.762,of all cache refs
+exit_status=0
+
+===== n=1536
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 1536 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+21531067091,,cycles:u,5966502670,100.00,,
+26714398943,,instructions:u,5966502670,100.00,1.24,insn per cycle
+174421847,,cache-references:u,5966502670,100.00,,
+52793141,,cache-misses:u,5966502670,100.00,30.268,of all cache refs
+exit_status=0
+
+===== n=1792
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 1792 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+31446718680,,cycles:u,8815508288,100.00,,
+42020290559,,instructions:u,8815508288,100.00,1.34,insn per cycle
+254088598,,cache-references:u,8815508288,100.00,,
+64727651,,cache-misses:u,8815508288,100.00,25.474,of all cache refs
+exit_status=0
+
+===== n=2048
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 2048 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+44441568913,,cycles:u,12423040538,100.00,,
+62199073894,,instructions:u,12423040538,100.00,1.40,insn per cycle
+509938056,,cache-references:u,12423040538,100.00,,
+106484497,,cache-misses:u,12423040538,100.00,20.882,of all cache refs
+exit_status=0
+
+===== n=2304
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_v3_openmp_benchmark' 2304 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+55942573591,,cycles:u,15922394356,100.00,,
+87904219769,,instructions:u,15922394356,100.00,1.57,insn per cycle
+530614731,,cache-references:u,15922394356,100.00,,
+76322133,,cache-misses:u,15922394356,100.00,14.384,of all cache refs
 exit_status=0
 

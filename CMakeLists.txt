@@ -82,6 +82,13 @@ function(add_cholesky_variant variant_name variant_source_root)
     target_link_libraries(${variant_name}_benchmark PRIVATE ${variant_name}_benchmark_support)
     set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_BENCHMARK_TARGETS ${variant_name}_benchmark)
 
+    add_executable(${variant_name}_reference_logdet_driver test/reference_logdet_driver.cpp)
+    target_include_directories(${variant_name}_reference_logdet_driver PRIVATE
+        ${variant_source_root}/include
+    )
+    target_link_libraries(${variant_name}_reference_logdet_driver PRIVATE ${variant_name})
+    set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_BENCHMARK_TARGETS ${variant_name}_reference_logdet_driver)
+
     add_executable(${variant_name}_benchmark_suite bench/cholesky_benchmark_suite.cpp)
     target_include_directories(${variant_name}_benchmark_suite PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}/generated
