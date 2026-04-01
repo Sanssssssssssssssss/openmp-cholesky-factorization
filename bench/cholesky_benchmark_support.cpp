@@ -61,6 +61,7 @@ CholeskyBenchmarkResult run_cholesky_benchmark(const CholeskyBenchmarkConfig& co
     CholeskyBenchmarkResult result;
     result.label = config.label;
     result.n = config.n;
+    result.requested_threads = 1;
     result.repetitions = config.repetitions;
     result.warmup = config.warmup;
 
@@ -118,6 +119,7 @@ void write_benchmark_result(std::ostream& out, const CholeskyBenchmarkResult& re
     out << "label=" << result.label << '\n';
     out << "generator=" << result.generator << '\n';
     out << "n=" << result.n << '\n';
+    out << "requested_threads=" << result.requested_threads << '\n';
     out << "repetitions=" << result.repetitions << '\n';
     out << "warmup=" << result.warmup << '\n';
     for (std::size_t index = 0; index < result.times.size(); ++index) {
@@ -134,7 +136,7 @@ void write_benchmark_result(std::ostream& out, const CholeskyBenchmarkResult& re
 }
 
 void write_benchmark_csv_header(std::ostream& out) {
-    out << "sweep,label,generator,n,repetitions,warmup,min_seconds,median_seconds,mean_seconds,max_seconds,"
+    out << "sweep,label,generator,n,requested_threads,repetitions,warmup,min_seconds,median_seconds,mean_seconds,max_seconds,"
            "estimated_flops,median_gflops,matrix_bytes,matrix_mib\n";
 }
 
@@ -145,6 +147,7 @@ void write_benchmark_csv_row(std::ostream& out, const std::string& sweep, const 
         << result.label << ','
         << result.generator << ','
         << result.n << ','
+        << result.requested_threads << ','
         << result.repetitions << ','
         << result.warmup << ','
         << result.min_seconds << ','

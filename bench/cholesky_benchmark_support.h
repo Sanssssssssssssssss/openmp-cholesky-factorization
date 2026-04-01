@@ -16,6 +16,7 @@ struct CholeskyBenchmarkResult {
     std::string label;
     std::string generator = "corr";
     int n = 0;
+    int requested_threads = 1;
     int repetitions = 0;
     int warmup = 0;
     std::vector<double> times;

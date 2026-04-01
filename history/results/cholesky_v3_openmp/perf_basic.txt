@@ -1,0 +1,44 @@
+benchmark=/home/cx272/c2_coursework/./build-release/cholesky_benchmark
+events=cycles,instructions,cache-references,cache-misses
+repetitions=7
+warmup=1
+===== n=128
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 128 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+8443867,,cycles:u,14406740,100.00,,
+22220001,,instructions:u,14406740,100.00,2.63,insn per cycle
+21321,,cache-references:u,14406740,100.00,,
+10497,,cache-misses:u,14406740,100.00,49.233,of all cache refs
+exit_status=0
+
+===== n=256
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 256 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+49355390,,cycles:u,23011320,100.00,,
+133340418,,instructions:u,23011320,100.00,2.70,insn per cycle
+62113,,cache-references:u,23011320,100.00,,
+8533,,cache-misses:u,23011320,100.00,13.738,of all cache refs
+exit_status=0
+
+===== n=512
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 512 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+364655540,,cycles:u,125573214,100.00,,
+979254632,,instructions:u,125573214,100.00,2.69,insn per cycle
+3154664,,cache-references:u,125573214,100.00,,
+172233,,cache-misses:u,125573214,100.00,5.460,of all cache refs
+exit_status=0
+
+===== n=1000
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 1000 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+2418634759,,cycles:u,682989885,100.00,,
+7072599953,,instructions:u,682989885,100.00,2.92,insn per cycle
+12856626,,cache-references:u,682989885,100.00,,
+263255,,cache-misses:u,682989885,100.00,2.048,of all cache refs
+exit_status=0
+
+===== n=1024
+command=perf stat -x, -e cycles,instructions,cache-references,cache-misses '/home/cx272/c2_coursework/./build-release/cholesky_benchmark' 1024 7 1 'cholesky_v3_openmp_perf' 2>&1 >/dev/null
+2794423965,,cycles:u,787938643,100.00,,
+7588765269,,instructions:u,787938643,100.00,2.72,insn per cycle
+65003724,,cache-references:u,787938643,100.00,,
+49541,,cache-misses:u,787938643,100.00,0.076,of all cache refs
+exit_status=0
+

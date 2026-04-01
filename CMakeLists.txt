@@ -30,15 +30,23 @@ if(C2_ENABLE_WARNINGS)
 endif()
 
 include(CTest)
+# Enable OpenMP explicitly because `v3` is the first required shared-memory parallel version.
+find_package(OpenMP REQUIRED)
 
 add_library(cholesky_filesystem_compat INTERFACE)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
     target_link_libraries(cholesky_filesystem_compat INTERFACE stdc++fs)
 endif()
 
+add_library(cholesky_openmp_runtime INTERFACE)
+# Keep the OpenMP runtime in one interface target so current and archived variants share the same parallel build setup.
+target_link_libraries(cholesky_openmp_runtime INTERFACE OpenMP::OpenMP_CXX)
+
 function(add_cholesky_variant variant_name variant_source_root)
     add_library(${variant_name} ${variant_source_root}/src/cholesky.cpp)
     target_include_directories(${variant_name} PUBLIC ${variant_source_root}/include)
+    # Link every variant against the same OpenMP runtime so the current implementation and archived milestones build uniformly.
+    target_link_libraries(${variant_name} PUBLIC cholesky_openmp_runtime)
 
     add_library(${variant_name}_test_support test/cholesky_test_suite.cpp)
     target_include_directories(${variant_name}_test_support PUBLIC
@@ -115,6 +123,38 @@ if(EXISTS ${v1_reference_root}/include/mphil_dis_cholesky.h AND EXISTS ${v1_refe
     target_link_libraries(cholesky_against_v1_tests PRIVATE cholesky cholesky_v1_reference)
     add_test(NAME cholesky_against_v1_tests COMMAND cholesky_against_v1_tests)
     set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_TEST_TARGETS cholesky_against_v1_tests)
+
+    add_executable(cholesky_stability_tests test/test_stability.cpp)
+    target_include_directories(cholesky_stability_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
+    target_link_libraries(cholesky_stability_tests PRIVATE cholesky)
+    add_test(NAME cholesky_stability_tests COMMAND cholesky_stability_tests)
+    set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_TEST_TARGETS cholesky_stability_tests)
+endif()
+
+set(v2_reference_root ${CMAKE_CURRENT_SOURCE_DIR}/history/versions/cholesky_v2_serial_blocked)
+if(EXISTS ${v2_reference_root}/include/mphil_dis_cholesky.h AND EXISTS ${v2_reference_root}/src/cholesky.cpp)
+    add_library(cholesky_v2_reference test/cholesky_v2_reference.cpp)
+    target_include_directories(cholesky_v2_reference PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+        ${v2_reference_root}/include
+    )
+
+    add_executable(cholesky_openmp_consistency_tests test/test_openmp_consistency.cpp)
+    target_include_directories(cholesky_openmp_consistency_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
+    # Link the OpenMP runtime here as well because this regression test sets explicit team sizes to check thread-count consistency.
+    target_link_libraries(cholesky_openmp_consistency_tests PRIVATE
+        cholesky
+        cholesky_v2_reference
+        cholesky_openmp_runtime
+    )
+    add_test(NAME cholesky_openmp_consistency_tests COMMAND cholesky_openmp_consistency_tests)
+    set_property(GLOBAL APPEND PROPERTY CHOLESKY_ALL_TEST_TARGETS cholesky_openmp_consistency_tests)
 endif()
 
 get_property(all_test_targets GLOBAL PROPERTY CHOLESKY_ALL_TEST_TARGETS)

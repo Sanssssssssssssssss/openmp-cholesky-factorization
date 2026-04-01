@@ -1,0 +1,14 @@
+[PASS] zero_size_matrix
+[PASS] one_by_one_matrix
+[PASS] coursework_example
+[PASS] coursework_example_logdet
+[PASS] diagonal_matrix_factorization
+[PASS] known_three_by_three_factor
+[PASS] known_four_by_four_rebuild
+[PASS] corr_matrix_rebuild_and_logdet
+[PASS] corr_matrix_positive_diagonal
+[PASS] invalid_input_rejected
+[PASS] negative_diagonal_fails
+All correctness tests passed.
+total=11
+failures=0

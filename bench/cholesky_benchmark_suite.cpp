@@ -16,6 +16,9 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>  // The suite controls explicit thread counts for the fixed-size scaling sweep.
+#endif
 
 namespace {
 
@@ -49,6 +52,13 @@ std::string benchmark_path_from_suite_path(const char* argv0) {
     }
 
     return {};
+}
+
+std::string sibling_executable_path_from_suite_path(const char* argv0,
+                                                    const std::string& desired_name) {
+    std::filesystem::path executable_path = std::filesystem::absolute(std::filesystem::path(argv0));
+    executable_path.replace_filename(desired_name);
+    return executable_path.string();
 }
 
 std::string now_utc_iso8601() {
@@ -269,6 +279,87 @@ bool run_and_record_sweep(const std::filesystem::path& output_path,
     return true;
 }
 
+bool run_thread_scaling_sweep(const std::filesystem::path& text_output_path,
+                              const std::filesystem::path& csv_output_path,
+                              int n,
+                              const std::vector<int>& thread_counts,
+                              int repetitions,
+                              int warmup,
+                              const std::string& label) {
+    std::ofstream text_file(text_output_path);
+    std::ofstream csv_file(csv_output_path);
+    if (!text_file || !csv_file) {
+        std::cerr << "failed to open thread scaling outputs\n";
+        return false;
+    }
+
+    write_benchmark_csv_header(csv_file);
+    text_file << "n=" << n << '\n';
+
+#ifdef _OPENMP
+    const int previous_dynamic = omp_get_dynamic();
+    const int previous_max_threads = omp_get_max_threads();
+    // Disable dynamic team resizing so each scaling point uses the exact requested thread count.
+    omp_set_dynamic(0);
+#endif
+
+    for (const int requested_threads : thread_counts) {
+        CholeskyBenchmarkConfig config;
+        config.n = n;
+        config.repetitions = repetitions;
+        config.warmup = warmup;
+        config.label = label + "_t" + std::to_string(requested_threads);
+
+#ifdef _OPENMP
+        // Force a specific OpenMP team size so the thread-scaling sweep measures fixed thread counts on the same problem size.
+        omp_set_num_threads(requested_threads);
+#endif
+
+        std::cerr.clear();
+        CholeskyBenchmarkResult result = run_cholesky_benchmark(config, std::cerr);
+        if (result.min_seconds < 0.0) {
+#ifdef _OPENMP
+            omp_set_num_threads(previous_max_threads);
+            omp_set_dynamic(previous_dynamic);
+#endif
+            return false;
+        }
+
+        result.requested_threads = requested_threads;
+        text_file << "===== threads=" << requested_threads << '\n';
+        write_benchmark_result(text_file, result);
+        text_file << '\n';
+        write_benchmark_csv_row(csv_file, "thread_scaling", result);
+
+        std::cout << "[INFO] threads=" << requested_threads
+                  << " n=" << n
+                  << " median_seconds=" << result.median_seconds
+                  << " median_gflops=" << result.median_gflops << '\n';
+    }
+
+#ifdef _OPENMP
+    omp_set_num_threads(previous_max_threads);
+    omp_set_dynamic(previous_dynamic);
+#endif
+
+    return true;
+}
+
+bool run_optional_report_test(const std::string& executable_path,
+                              const std::filesystem::path& report_path,
+                              const std::string& display_name) {
+    if (!std::filesystem::exists(executable_path)) {
+        std::cout << "[INFO] Skipping " << display_name << " -> executable not found\n";
+        return true;
+    }
+
+    const std::string command =
+        shell_quote(executable_path) + " " + shell_quote(report_path.string()) + " >/dev/null";
+    std::cout << "[INFO] Running " << display_name << " -> " << report_path << '\n';
+    const int status = std::system(command.c_str());
+    return status == 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -289,6 +380,12 @@ int main(int argc, char** argv) {
     const std::filesystem::path output_dir = std::filesystem::path("history") / "results" / label;
     std::filesystem::create_directories(output_dir);
     const std::string benchmark_path = benchmark_path_from_suite_path(argv[0]);
+    const std::string against_v1_test_path =
+        sibling_executable_path_from_suite_path(argv[0], "cholesky_against_v1_tests");
+    const std::string stability_test_path =
+        sibling_executable_path_from_suite_path(argv[0], "cholesky_stability_tests");
+    const std::string openmp_consistency_test_path =
+        sibling_executable_path_from_suite_path(argv[0], "cholesky_openmp_consistency_tests");
     const std::filesystem::path csv_path = output_dir / "sweeps.csv";
     std::ofstream csv_file(csv_path);
     if (!csv_file) {
@@ -329,9 +426,31 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (!run_optional_report_test(against_v1_test_path,
+                                  output_dir / "against_v1.txt",
+                                  "against_v1 regression")) {
+        std::cerr << "against_v1 regression failed\n";
+        return 1;
+    }
+
+    if (!run_optional_report_test(stability_test_path,
+                                  output_dir / "stability.txt",
+                                  "stability suite")) {
+        std::cerr << "stability suite failed\n";
+        return 1;
+    }
+
+    if (!run_optional_report_test(openmp_consistency_test_path,
+                                  output_dir / "omp_consistency.txt",
+                                  "OpenMP consistency suite")) {
+        std::cerr << "OpenMP consistency suite failed\n";
+        return 1;
+    }
+
     const std::vector<int> coarse_sizes = {1, 2, 4, 8, 10, 16, 32, 64, 100, 124, 127, 128, 129, 255, 256, 257, 511, 512, 513, 1000, 1024};
     const std::vector<int> fine_sizes = {992, 1000, 1008, 1013, 1023, 1024, 1025, 1032};
     const std::vector<int> large_sizes = {1152, 1280};
+    const std::vector<int> thread_scaling_counts = {1, 2, 4, 16, 32};
 
     if (!run_and_record_sweep(output_dir / "time_coarse.txt",
                               csv_file,
@@ -360,6 +479,16 @@ int main(int argc, char** argv) {
                               repetitions,
                               warmup,
                               label)) {
+        return 1;
+    }
+
+    if (!run_thread_scaling_sweep(output_dir / "thread_scaling.txt",
+                                  output_dir / "thread_scaling.csv",
+                                  1024,
+                                  thread_scaling_counts,
+                                  repetitions,
+                                  warmup,
+                                  label)) {
         return 1;
     }
 
@@ -397,7 +526,7 @@ int main(int argc, char** argv) {
     summary_file << "repetitions=" << repetitions << '\n';
     summary_file << "warmup=" << warmup << '\n';
     summary_file << "correctness=passed\n";
-    summary_file << "files=correctness.txt,time_coarse.txt,time_fine.txt,time_large.txt,sweeps.csv,metadata.txt,perf_basic.txt,perf_basic.csv\n";
+    summary_file << "files=correctness.txt,against_v1.txt,stability.txt,omp_consistency.txt,time_coarse.txt,time_fine.txt,time_large.txt,thread_scaling.txt,thread_scaling.csv,sweeps.csv,metadata.txt,perf_basic.txt,perf_basic.csv\n";
 
     std::cout << "[INFO] Wrote suite results to " << output_dir << '\n';
     return 0;

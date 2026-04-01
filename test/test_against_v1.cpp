@@ -139,12 +139,12 @@ bool run_case(int block_size, int n, std::ostream& out, std::ostream& err) {
     detail.setf(std::ios::scientific);
     detail.precision(6);
     detail << "block_size=" << block_size
-           << " n=" << n;
-        //    << " current_seconds=" << current_elapsed
-        //    << " reference_seconds=" << reference_elapsed
-        //    << " current_rebuild_max_abs_error=" << current_rebuild_error
-        //    << " reference_rebuild_max_abs_error=" << reference_rebuild_error
-        //    << " factor_max_abs_diff=" << factor_max_diff;
+           << " n=" << n
+           << " current_seconds=" << current_elapsed
+           << " reference_seconds=" << reference_elapsed
+           << " current_rebuild_max_abs_error=" << current_rebuild_error
+           << " reference_rebuild_max_abs_error=" << reference_rebuild_error
+           << " factor_max_abs_diff=" << factor_max_diff;
 
     if (ok) {
         out << "[PASS] " << detail.str() << '\n';
