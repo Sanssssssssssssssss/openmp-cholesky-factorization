@@ -1,1 +1,1 @@
-"""Performance plotting helpers for the C2 coursework benchmark history."""
+"""Performance plotting helpers for the OpenMP Cholesky benchmark history."""

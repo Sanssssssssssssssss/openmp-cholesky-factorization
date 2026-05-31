@@ -13,7 +13,7 @@ VERSIONS = [
         "title": "v0: Baseline serial kernel",
         "source": REPO_ROOT / "history" / "versions" / "cholesky_v0_baseline" / "src" / "cholesky.cpp",
         "summary": (
-            "This version is a direct serial implementation of the coursework baseline algorithm. "
+            "This version is a direct serial implementation of the baseline algorithm. "
             "It serves as the initial correctness and timing reference before any restructuring or parallelisation."
         ),
         "annotate_openmp": False,

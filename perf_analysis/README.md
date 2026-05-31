@@ -1,6 +1,6 @@
 # Performance Plotting Project
 
-This directory is a standalone local plotting project for the C2 coursework benchmark history.
+This directory is a standalone local plotting project for the OpenMP Cholesky benchmark history.
 
 It does not build or modify the Cholesky library itself. It only reads committed benchmark outputs from:
 

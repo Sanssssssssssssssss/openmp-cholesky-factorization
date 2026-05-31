@@ -1,8 +1,8 @@
-# C2 HPC Coursework: OpenMP Cholesky Factorization
+# OpenMP Cholesky Factorization
 
-This repository contains a CPU-only Cholesky factorization implementation for the Cambridge MPhil DIS C2 HPC coursework. The code is written in C++, operates in place on a row-major `double*` matrix, and is developed through tagged milestone versions from a serial baseline to an OpenMP-optimized implementation. The repository also includes tests, reproducible benchmark runners, archived milestone snapshots, and CSD3 submission scripts.
+This repository contains a CPU-only Cholesky factorization implementation for dense symmetric positive-definite matrices. The code is written in C++, operates in place on a row-major `double*` matrix, and is developed through tagged milestone versions from a serial baseline to an OpenMP-optimized implementation. The repository also includes tests, reproducible benchmark runners, archived milestone snapshots, and CSD3 submission scripts.
 
-The coursework-facing public interface is the header:
+The public C++ interface is the header:
 
 ```cpp
 #include "mphil_dis_cholesky.h"
@@ -74,7 +74,7 @@ All tracked milestone source snapshots and benchmark bundles live under `history
 
 ## Project Structure
 
-- `include/`: public header for the coursework library interface.
+- `include/`: public header for the Cholesky library interface.
 - `src/`: current implementation of the Cholesky kernel.
 - `example/`: minimal example program using the public API.
 - `test/`: correctness, regression, stability, OpenMP consistency, and external-reference validation tools.
@@ -84,7 +84,7 @@ All tracked milestone source snapshots and benchmark bundles live under `history
 - `scripts/csd3/`: submission-ready `.slurm` and `.sh` entrypoints for CSD3.
 - `history/versions/`: archived source snapshots for milestone versions.
 - `history/results/`: tracked benchmark/result bundles for milestone versions.
-- `report/`: location for the final coursework report, expected as `report/report.pdf`.
+- `report/`: location for the final performance report, expected as `report/report.pdf`.
 - `.dev_memory/`: local-only project memory used during development and not intended for submission.
 
 ## Build and Run
@@ -206,7 +206,7 @@ git diff cholesky_v1_serial_opt cholesky_v2_serial_blocked -- src/cholesky.cpp
 - Milestone source snapshots live in `history/versions/<version>/`.
 - Python analysis scripts and generated performance figures live in `perf_analysis/`.
 - The final report should be placed at `report/report.pdf` before submission.
-- In other words, the coursework-facing deliverables are intentionally concentrated under `history/` for code/results and under `report/` for the written report.
+- In other words, the archived deliverables are intentionally concentrated under `history/` for code/results and under `report/` for the written report.
 - The `main` branch should be treated as the final submission branch.
 
 Typical result bundles contain:

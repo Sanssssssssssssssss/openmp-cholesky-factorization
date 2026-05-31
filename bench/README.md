@@ -14,7 +14,7 @@ Example:
 ./build/cholesky_benchmark 512 5 1 baseline-serial
 ```
 
-The driver generates the coursework-style correlation matrix, runs the in-place factorization repeatedly, and prints both per-run timings and summary statistics.
+The driver generates the benchmark correlation matrix, runs the in-place factorization repeatedly, and prints both per-run timings and summary statistics.
 
 Unified suite entrypoint:
 
